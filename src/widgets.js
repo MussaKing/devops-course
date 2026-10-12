@@ -2,6 +2,28 @@
 // ====== ИНТЕРАКТИВНЫЕ ВИДЖЕТЫ ======
 let wSeq = 0;
 const WIDGETS = {
+  // Калькулятор бюджета ошибок
+  slo(el){
+    const id = 'sl' + (++wSeq);
+    el.className = 'widget';
+    el.innerHTML = `<div class="row"><label for="${id}" class="small">SLO, %</label><input type="text" id="${id}" class="mono" value="99.9" style="width:110px" autocomplete="off" inputmode="decimal">${['99', '99.5', '99.9', '99.95', '99.99'].map(v => `<button class="btn ghost sm mono" data-v="${v}">${v}</button>`).join('')}</div><div class="out"></div>`;
+    const inp = el.querySelector('#' + id), out = el.querySelector('.out');
+    const dur = s => {
+      if (s < 60) return Math.round(s) + ' с';
+      const m = s / 60; if (m < 60) return Math.floor(m) + ' мин' + (m < 10 && Math.round(s % 60) ? ' ' + Math.round(s % 60) + ' с' : '');
+      const h = m / 60; if (h < 24) return Math.floor(h) + ' ч ' + Math.round(m % 60) + ' мин';
+      return Math.floor(h / 24) + ' д ' + Math.round(h % 24) + ' ч';
+    };
+    const calc = () => {
+      const v = parseFloat(inp.value.replace(',', '.'));
+      if (!(v > 0 && v < 100)){ out.innerHTML = '<p class="small" style="color:var(--bad);margin:0">Введите число от 0 до 100, например 99.9.</p>'; return; }
+      const f = 1 - v / 100;
+      out.innerHTML = `<div class="kv"><div><span>В день</span><b>${dur(86400 * f)}</b></div><div><span>В неделю</span><b>${dur(604800 * f)}</b></div><div><span>За 30 дней</span><b>${dur(2592000 * f)}</b></div><div><span>В год</span><b>${dur(31536000 * f)}</b></div><div><span>Ошибок на 1 млн запросов</span><b>${Math.round(1e6 * f).toLocaleString('ru-RU')}</b></div></div>`;
+    };
+    el.querySelectorAll('[data-v]').forEach(b => b.onclick = () => { inp.value = b.dataset.v; calc(); });
+    inp.oninput = calc; calc();
+  },
+
   // Путь коммита до продакшена
   pipeline(el){
     const steps = [

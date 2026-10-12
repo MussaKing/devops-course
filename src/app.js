@@ -145,7 +145,7 @@ function viewHome(){
   const banner = !store.ok ? '<div class="banner"><span>Браузер не даёт сохранять прогресс (приватный режим или запрет хранилища). Скопируйте прогресс вручную на странице «Прогресс».</span><a class="btn ghost sm" href="#/progress">Открыть</a></div>' : '';
   let html = banner + `<section class="hero"><div class="eyebrow">курс · ${MODULES.length + UPCOMING.length} модулей · ${o.total} уроков</div>
   <h1>DevOps для разработчиков</h1>
-  <p>Как код проходит путь от <code>git push</code> до работающего сервиса: Linux, Bash, Git, Docker, CI/CD и Kubernetes. Короткая теория, реальные команды и конфиги, тесты после каждого модуля.</p>
+  <p>Как код проходит путь от <code>git push</code> до работающего сервиса: Linux, Bash, Git, Docker, CI/CD, Kubernetes, Terraform, облака, мониторинг, безопасность и SRE. Короткая теория, реальные команды и конфиги, тесты после каждого модуля.</p>
   <div class="stats"><div class="stat"><b>${o.pct}%</b><span>курса пройдено</span></div><div class="stat"><b>${o.done}/${o.total}</b><span>уроков</span></div><div class="stat"><b>${o.passed}/${MODULES.length}</b><span>тестов сдано</span></div></div>
   <div class="meter" aria-label="Прогресс курса ${o.pct}%"><i style="width:${o.pct}%"></i></div>
   <div class="row"><a class="btn" href="${cont}">${o.done ? 'Продолжить' : 'Начать обучение'} →</a><a class="btn ghost" href="#/tools">Инструменты</a></div></section>
@@ -320,13 +320,13 @@ function startTest(id, errorsOnly){
 }
 function examPool(){ return MODULES.flatMap(m => [...m.test, ...m.lessons.flatMap(l => l.check.map(q => ({ ...q, l:l.id })))]); }
 function examIntro(){
-  const root = $('#testRoot'), fe = S().exam, pool = examPool(), n = Math.min(30, pool.length);
+  const root = $('#testRoot'), fe = S().exam, pool = examPool(), n = Math.min(40, pool.length);
   root.innerHTML = `<div class="crumbs"><a href="#/">главная</a> / экзамен</div><h1>Финальный экзамен</h1>
-  <p style="margin-top:12px;max-width:62ch">${n} случайных вопросов из всех модулей, 45 минут, порог ${PASS}%. В банке сейчас ${pool.length} вопросов, с новыми модулями он будет расти.</p>
+  <p style="margin-top:12px;max-width:62ch">${n} случайных вопросов из всех модулей, 60 минут, порог ${PASS}%. В банке сейчас ${pool.length} вопросов, с новыми модулями он будет расти.</p>
   ${fe ? `<p class="small">Лучший результат <b>${fe.best}%</b>, попыток: ${fe.attempts}.</p>` : ''}
   <button class="btn" id="examGo" style="margin-top:8px">Начать экзамен</button>`;
   $('#examGo').onclick = () => runQuiz(root, shuffle(pool).slice(0, n), {
-    title:'Финальный экзамен', crumbs:'<a href="#/">главная</a> / экзамен', deadline:Date.now() + 45 * 60 * 1000,
+    title:'Финальный экзамен', crumbs:'<a href="#/">главная</a> / экзамен', deadline:Date.now() + 60 * 60 * 1000,
     onFinish:score => {
       const o = S().exam;
       S().exam = { best:Math.max(score, o ? o.best : 0), attempts:(o ? o.attempts : 0) + 1, lastAt:new Date().toISOString() };
@@ -385,7 +385,8 @@ function viewTools(){
   <h2 style="margin:28px 0 12px">Калькулятор прав chmod</h2><div data-widget="chmod"></div>
   <h2 style="margin:28px 0 12px">Расшифровка cron</h2><div data-widget="cron"></div>
   <h2 style="margin:28px 0 12px">Кэш слоёв Docker</h2><div data-widget="layers"></div>
-  <h2 style="margin:28px 0 12px">Стратегии деплоя</h2><div data-widget="rollout"></div>`;
+  <h2 style="margin:28px 0 12px">Стратегии деплоя</h2><div data-widget="rollout"></div>
+  <h2 style="margin:28px 0 12px">Бюджет ошибок SLO</h2><div data-widget="slo"></div>`;
 }
 
 // ====== ГЛОССАРИЙ ======
