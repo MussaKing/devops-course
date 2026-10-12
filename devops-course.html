@@ -1,0 +1,1969 @@
+<title>DevOps для разработчиков</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@500;700;800&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: фиксированный сайдбар-«пайплайн» слева, справа колонка урока + оглавление. Цвет акцента — янтарный сигнал сборки. */
+:root{
+  --bg:#eef1f4; --panel:#ffffff; --panel-2:#f6f8fa; --fg:#17212c; --muted:#5b6878; --line:#d5dce4;
+  --accent:#b35f0c; --accent-fg:#ffffff; --accent-soft:#f7e6d3;
+  --ok:#1f7a4a; --ok-soft:#dcf1e4; --bad:#b4322c; --bad-soft:#f8dedc; --warn:#8a6a00; --warn-soft:#f6edc8;
+  --code-bg:#e6ebf0; --shadow:0 1px 2px rgba(23,33,44,.06),0 4px 16px rgba(23,33,44,.05);
+  --f-display:'Onest','Segoe UI',system-ui,sans-serif;
+  --f-body:'IBM Plex Sans','Segoe UI',system-ui,sans-serif;
+  --f-mono:'JetBrains Mono',Consolas,'Courier New',monospace;
+  --side-w:276px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0f141b; --panel:#151c25; --panel-2:#1a2330; --fg:#e3e8ee; --muted:#8e9aab; --line:#27313f;
+  --accent:#f0a347; --accent-fg:#1b1206; --accent-soft:#3a2a17;
+  --ok:#5ccf8e; --ok-soft:#173326; --bad:#f07a72; --bad-soft:#3b1d1c; --warn:#e6c45a; --warn-soft:#352d12;
+  --code-bg:#1d2733; --shadow:none; color-scheme:dark;
+}}
+:root[data-theme="dark"]{
+  --bg:#0f141b; --panel:#151c25; --panel-2:#1a2330; --fg:#e3e8ee; --muted:#8e9aab; --line:#27313f;
+  --accent:#f0a347; --accent-fg:#1b1206; --accent-soft:#3a2a17;
+  --ok:#5ccf8e; --ok-soft:#173326; --bad:#f07a72; --bad-soft:#3b1d1c; --warn:#e6c45a; --warn-soft:#352d12;
+  --code-bg:#1d2733; --shadow:none; color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{background:var(--bg)}
+body{margin:0}
+[hidden]{display:none!important}
+body{color:var(--fg);font:16px/1.65 var(--f-body);-webkit-font-smoothing:antialiased}
+a{color:var(--accent)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:4px}
+h1,h2,h3{font-family:var(--f-display);line-height:1.2;text-wrap:balance;margin:0}
+h1{font-size:clamp(1.6rem,3.4vw,2.2rem);font-weight:800;letter-spacing:-.01em}
+h2{font-size:1.35rem;font-weight:700}
+h3{font-size:1.1rem;font-weight:700}
+code,kbd,pre{font-family:var(--f-mono);font-size:.88em}
+:not(pre)>code{background:var(--code-bg);padding:.1em .38em;border-radius:5px;white-space:nowrap}
+pre{background:var(--code-bg);padding:14px 16px;border-radius:8px;overflow-x:auto;line-height:1.55;margin:0}
+pre .c{color:var(--muted)}
+pre .p{color:var(--accent);user-select:none}
+.small{font-size:.9rem;color:var(--muted)}
+.mono{font-family:var(--f-mono)}
+
+/* каркас */
+.app{display:flex;min-height:100vh}
+.side{position:fixed;inset:0 auto 0 0;width:var(--side-w);background:var(--panel);border-right:1px solid var(--line);overflow-y:auto;padding:18px 12px 40px;z-index:20}
+.main{flex:1;min-width:0;margin-left:var(--side-w);padding:0 clamp(16px,4vw,48px) 64px}
+.top{display:flex;gap:10px;justify-content:flex-end;align-items:center;padding-block:16px;position:sticky;top:env(safe-area-inset-top,0px);background:var(--bg);z-index:10}
+.top .menu{display:none;margin-right:auto}
+#view{max-width:1120px}
+.scrim{display:none}
+@media (max-width:900px){
+  .side{transform:translateX(-102%);transition:transform .2s ease;box-shadow:0 0 40px rgba(0,0,0,.25)}
+  .side.open{transform:none}
+  .side.open+.scrim{display:block;position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:15}
+  .main{margin-left:0}
+  .top .menu{display:inline-flex}
+}
+
+/* сайдбар */
+.brand{display:flex;gap:10px;align-items:center;text-decoration:none;color:var(--fg);font:800 1.05rem/1.2 var(--f-display);padding:4px 8px 16px}
+.brand svg{flex:none;color:var(--fg)}
+.nav{display:flex;flex-direction:column;gap:1px}
+.nav a{display:flex;gap:10px;align-items:baseline;padding:7px 10px;border-radius:7px;text-decoration:none;color:var(--fg);font-size:.93rem;line-height:1.35}
+.nav a:hover{background:var(--panel-2)}
+.nav a.active{background:var(--accent-soft);color:var(--fg);font-weight:600}
+.nav a.locked{color:var(--muted)}
+.nav-label{font:600 .7rem/1 var(--f-mono);letter-spacing:.12em;text-transform:uppercase;color:var(--muted);padding:18px 10px 8px}
+.port{font-family:var(--f-mono);font-size:.78rem;color:var(--muted);min-width:1.6em;flex:none}
+.dot{width:8px;height:8px;border-radius:50%;border:1.5px solid var(--muted);flex:none;transform:translateY(-1px)}
+.dot.part{border-color:var(--accent);background:linear-gradient(90deg,var(--accent) 50%,transparent 50%)}
+.dot.on{border-color:var(--ok);background:var(--ok)}
+.lock{font-family:var(--f-mono);font-size:.7rem;color:var(--muted);margin-left:auto}
+
+/* кнопки, поля */
+.btn{display:inline-flex;align-items:center;gap:6px;font:600 .92rem/1 var(--f-body);padding:11px 16px;border-radius:8px;border:1.5px solid var(--accent);background:var(--accent);color:var(--accent-fg);cursor:pointer;text-decoration:none;white-space:nowrap}
+.btn:hover{filter:brightness(1.07)}
+.btn.ghost{background:transparent;color:var(--fg);border-color:var(--line)}
+.btn.ghost:hover{border-color:var(--accent)}
+.btn.danger{background:var(--bad);border-color:var(--bad);color:#fff}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn.sm{padding:7px 11px;font-size:.85rem}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+input[type=text],textarea,select{font:inherit;color:var(--fg);background:var(--panel);border:1.5px solid var(--line);border-radius:8px;padding:9px 12px;max-width:100%}
+input[type=text]:focus,textarea:focus,select:focus{border-color:var(--accent);outline:none}
+textarea{width:100%;font-family:var(--f-mono);font-size:.82rem}
+.status{display:inline-flex;align-items:center;gap:8px;font:500 .78rem/1 var(--f-mono);color:var(--muted);border:1px solid var(--line);border-radius:99px;padding:8px 12px;text-decoration:none;background:var(--panel)}
+.status i{width:7px;height:7px;border-radius:50%;background:var(--ok)}
+.status.warn i{background:var(--bad)}
+
+/* главная */
+.eyebrow{font:600 .75rem/1 var(--f-mono);letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.hero{display:grid;gap:14px;padding:8px 0 30px;border-bottom:1px solid var(--line);margin-bottom:30px}
+.hero p{max-width:62ch;margin:0;font-size:1.06rem}
+.stats{display:flex;gap:clamp(18px,4vw,44px);flex-wrap:wrap;margin-top:6px}
+.stat b{display:block;font:700 1.7rem/1.1 var(--f-mono);font-variant-numeric:tabular-nums}
+.stat span{font-size:.85rem;color:var(--muted)}
+.meter{height:6px;background:var(--line);border-radius:99px;overflow:hidden}
+.meter i{display:block;height:100%;background:var(--accent);border-radius:99px}
+.mods{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px}
+.mod{display:flex;flex-direction:column;gap:6px;padding:16px 18px;background:var(--panel);border:1px solid var(--line);border-radius:10px;text-decoration:none;color:var(--fg);box-shadow:var(--shadow)}
+.mod:hover{border-color:var(--accent)}
+.mod .num{display:flex;justify-content:space-between;align-items:center;font:600 .72rem/1 var(--f-mono);letter-spacing:.08em;color:var(--muted)}
+.mod p{margin:0;font-size:.9rem;color:var(--muted);flex:1}
+.mod.locked h3,.mod.soon h3{color:var(--muted)}
+.mod.soon{background:transparent;box-shadow:none;border-style:dashed}
+.tag{font:600 .7rem/1 var(--f-mono);padding:4px 7px;border-radius:5px;background:var(--accent-soft);color:var(--fg);white-space:nowrap}
+.tag.ok{background:var(--ok-soft);color:var(--ok)}
+.tag.muted{background:var(--panel-2);color:var(--muted)}
+
+/* списки уроков */
+.crumbs{font:500 .78rem/1.4 var(--f-mono);color:var(--muted);margin-bottom:10px}
+.crumbs a{color:var(--muted)}
+.list{display:flex;flex-direction:column;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--panel)}
+.list a{display:flex;gap:12px;align-items:center;padding:13px 16px;text-decoration:none;color:var(--fg);border-top:1px solid var(--line)}
+.list a:first-child{border-top:0}
+.list a:hover{background:var(--panel-2)}
+.grow{flex:1;min-width:0}
+
+/* урок */
+.lesson-grid{display:grid;grid-template-columns:minmax(0,1fr) 230px;gap:44px;align-items:start}
+.toc{position:sticky;top:76px;display:flex;flex-direction:column;gap:2px;font-size:.88rem}
+.toc a{display:flex;gap:8px;color:var(--fg);text-decoration:none;padding:5px 8px;border-radius:6px;line-height:1.35}
+.toc a:hover{background:var(--panel-2)}
+.toc a.active{background:var(--accent-soft);font-weight:600}
+.toc a.sub{color:var(--muted);padding-left:24px}
+.toc .dot{margin-top:6px}
+@media (max-width:1100px){.lesson-grid{grid-template-columns:minmax(0,1fr)}.toc{display:none}}
+.prose{max-width:72ch}
+.prose>*+*{margin-top:1em}
+.prose h3{margin-top:1.9em}
+.prose ul,.prose ol{padding-left:1.3em}
+.prose li+li{margin-top:.35em}
+.prose p,.prose li{text-wrap:pretty}
+.note{background:var(--accent-soft);border-radius:8px;padding:14px 16px}
+.note.ok{background:var(--ok-soft)}
+.note.warn{background:var(--warn-soft)}
+.note.bad{background:var(--bad-soft)}
+.tbl{overflow-x:auto;border:1px solid var(--line);border-radius:8px;background:var(--panel)}
+table{border-collapse:collapse;width:100%;font-size:.92rem}
+th,td{text-align:left;padding:9px 12px;border-top:1px solid var(--line);vertical-align:top}
+tr:first-child th{border-top:0}
+th{font:600 .75rem/1.3 var(--f-mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);background:var(--panel-2)}
+td code{white-space:nowrap}
+.flow{display:flex;flex-wrap:wrap;align-items:center;gap:6px;font:500 .82rem/1.2 var(--f-mono)}
+.flow span{border:1.5px solid var(--line);background:var(--panel);border-radius:6px;padding:7px 10px}
+.flow b{color:var(--muted);font-weight:400}
+.flow span.hl{border-color:var(--accent);background:var(--accent-soft)}
+.cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px}
+.cols>div{min-width:0;border:1px solid var(--line);border-radius:8px;padding:12px 14px;background:var(--panel)}
+.cols>div>b{display:block;font-family:var(--f-display);margin-bottom:4px}
+
+/* вопросы */
+.q{border:1px solid var(--line);border-radius:10px;padding:16px 18px;margin-top:14px;background:var(--panel)}
+.qh{display:flex;justify-content:space-between;gap:10px;font:600 .7rem/1 var(--f-mono);letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.qp{margin:10px 0;font-weight:500}
+.q pre{margin-bottom:10px}
+.qb{display:flex;flex-direction:column;gap:8px}
+.opt{display:flex;gap:10px;align-items:flex-start;padding:10px 12px;border:1.5px solid var(--line);border-radius:8px;cursor:pointer}
+.opt:hover{border-color:var(--accent)}
+.opt input{margin-top:5px;accent-color:var(--accent)}
+.opt.right{border-color:var(--ok);background:var(--ok-soft)}
+.opt.wrong{border-color:var(--bad);background:var(--bad-soft)}
+.ordl{display:flex;flex-direction:column;gap:6px}
+.ordi{display:flex;gap:10px;align-items:center;padding:8px 10px;border:1.5px solid var(--line);border-radius:8px;background:var(--panel)}
+.ordi .t{flex:1;min-width:0}
+.ordi button{font:600 .9rem/1 var(--f-mono);width:30px;height:30px;border:1px solid var(--line);border-radius:6px;background:var(--panel-2);color:var(--fg);cursor:pointer}
+.ordi button:disabled{opacity:.3;cursor:default}
+.ordi.right{border-color:var(--ok);background:var(--ok-soft)}
+.ordi.wrong{border-color:var(--bad);background:var(--bad-soft)}
+.mrow{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.3fr);gap:10px;align-items:center}
+.mrow select{width:100%}
+.mrow select.right{border-color:var(--ok)}
+.mrow select.wrong{border-color:var(--bad)}
+@media (max-width:560px){.mrow{grid-template-columns:minmax(0,1fr)}}
+.fb{margin-top:12px;padding:11px 14px;border-radius:8px;font-size:.94rem}
+.fb.ok{background:var(--ok-soft)}
+.fb.bad{background:var(--bad-soft)}
+.fb b{margin-right:6px}
+.result{text-align:center;padding:26px 16px;border:1px solid var(--line);border-radius:12px;background:var(--panel);margin:18px 0}
+.result .big{font:800 3rem/1 var(--f-mono)}
+.timer{font:700 1.2rem/1 var(--f-mono);padding:8px 12px;border:1.5px solid var(--accent);border-radius:8px;font-variant-numeric:tabular-nums}
+.banner{display:flex;gap:12px;flex-wrap:wrap;align-items:center;justify-content:space-between;background:var(--warn-soft);border-radius:10px;padding:12px 16px;margin-bottom:20px}
+.confirm{background:var(--bad-soft);border-radius:10px;padding:14px 16px;margin-top:12px}
+.toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--fg);color:var(--bg);padding:11px 18px;border-radius:8px;font-size:.92rem;z-index:50;max-width:calc(100vw - 32px)}
+.gl-item{padding:11px 0;border-bottom:1px solid var(--line)}
+
+/* виджеты */
+.widget{border:1.5px solid var(--line);border-radius:12px;padding:18px;background:var(--panel);display:grid;gap:14px}
+.wlabel{font:600 .7rem/1 var(--f-mono);letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.stages{display:flex;flex-wrap:wrap;gap:6px}
+.stage{font:600 .78rem/1.2 var(--f-mono);padding:8px 10px;border-radius:6px;border:1.5px solid var(--line);color:var(--muted);background:var(--panel-2)}
+.stage.done{border-color:var(--ok);color:var(--ok);background:var(--ok-soft)}
+.stage.cur{border-color:var(--accent);color:var(--fg);background:var(--accent-soft)}
+.stage.fail{border-color:var(--bad);color:var(--bad);background:var(--bad-soft)}
+.perm{display:grid;grid-template-columns:auto repeat(3,minmax(44px,64px));gap:6px 10px;align-items:center;font-family:var(--f-mono);font-size:.88rem}
+.perm label{display:flex;justify-content:center}
+.perm input{width:20px;height:20px;accent-color:var(--accent)}
+.bigcode{font:600 1.15rem/1.3 var(--f-mono);background:var(--code-bg);padding:10px 14px;border-radius:8px;overflow-x:auto;white-space:nowrap}
+.kv{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:8px}
+.kv div{background:var(--panel-2);border-radius:8px;padding:9px 12px;min-width:0}
+.kv span{display:block;font-size:.78rem;color:var(--muted)}
+.kv b{font-family:var(--f-mono);font-size:.92rem;overflow-wrap:anywhere}
+.layers{display:flex;flex-direction:column;gap:4px;font-family:var(--f-mono);font-size:.84rem}
+.layer{display:flex;gap:10px;align-items:center;padding:7px 10px;border-radius:6px;border:1.5px solid var(--line);min-width:0}
+.layer code{flex:1;min-width:0;background:none;padding:0;white-space:pre;overflow-x:auto}
+.layer .st{font-size:.72rem;font-weight:600;white-space:nowrap}
+.layer.cached{border-color:var(--ok)}
+.layer.cached .st{color:var(--ok)}
+.layer.rebuild{border-color:var(--accent);background:var(--accent-soft)}
+.layer.rebuild .st{color:var(--accent)}
+.seg{display:inline-flex;border:1.5px solid var(--line);border-radius:8px;overflow:hidden;flex-wrap:wrap}
+.seg button{font:600 .82rem/1 var(--f-body);padding:9px 12px;border:0;background:transparent;color:var(--fg);cursor:pointer}
+.seg button.on{background:var(--accent);color:var(--accent-fg)}
+.pods{display:flex;flex-wrap:wrap;gap:8px}
+.pod{width:62px;height:52px;border-radius:8px;border:1.5px solid var(--line);display:flex;flex-direction:column;align-items:center;justify-content:center;font:600 .74rem/1.2 var(--f-mono);background:var(--panel-2);color:var(--muted)}
+.pod.v2{border-color:var(--accent);background:var(--accent-soft);color:var(--fg)}
+.pod.starting{border-style:dashed}
+.pod.term{opacity:.35;text-decoration:line-through}
+.pod small{font-weight:400;font-size:.66rem}
+.envbox{display:grid;gap:8px}
+.envbox .lbl{font:600 .72rem/1 var(--f-mono);color:var(--muted)}
+.traffic{height:10px;border-radius:99px;background:var(--line);overflow:hidden;display:flex}
+.traffic i{display:block;height:100%}
+.runs{margin:0;padding-left:1.2em;font-family:var(--f-mono);font-size:.86rem}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+<div class="app">
+  <aside id="side" class="side" aria-label="Навигация по курсу"></aside>
+  <div class="scrim" id="scrim"></div>
+  <main class="main">
+    <header class="top">
+      <button class="btn ghost sm menu" id="menuBtn" aria-label="Открыть меню">☰ Меню</button>
+      <a class="status" id="saveStatus" href="#/progress"><i></i><span>Сохранено в браузере</span></a>
+      <button class="btn ghost sm" id="themeBtn">◐ Тема</button>
+    </header>
+    <div id="view"></div>
+  </main>
+</div>
+<script>
+
+// ====== КОНТЕНТ КУРСА: модули 0–2 ======
+const MODULES = [];
+
+MODULES.push({
+  id:0, title:'Общая картина', short:'Путь кода до прода, культура DevOps, метрики DORA',
+  lessons:[
+{ id:'0-1', title:'Путь кода от коммита до продакшена',
+html:`
+<p>Разработчик дописал фичу и сделал <code>git push</code>. Через 15 минут её видят пользователи, и при этом никто не заходил на сервер руками. Весь курс — о том, как устроен этот путь. Вот он целиком: пройдите его по шагам и попробуйте «уронить» тесты.</p>
+<div data-widget="pipeline"></div>
+<h3>Цепочка и модули курса</h3>
+<ol>
+<li><b>Код и история изменений.</b> Ветки, пулл-реквесты, ревью (модуль 3, Git).</li>
+<li><b>Непрерывная интеграция (CI).</b> На каждый push сервер сборки собирает проект и гоняет тесты (модуль 5).</li>
+<li><b>Упаковка.</b> Приложение вместе с зависимостями собирается в образ контейнера (модуль 4, Docker).</li>
+<li><b>Доставка.</b> Образ раскатывается на staging, затем на прод без простоя (модули 5–6).</li>
+<li><b>Где это всё работает.</b> Серверы на Linux (модули 1–2), оркестратор Kubernetes (модуль 6), инфраструктура, описанная кодом (модуль 7).</li>
+<li><b>Наблюдение.</b> Метрики, логи и алерты показывают, что релиз не сломал прод (модуль 9).</li>
+</ol>
+<div class="note"><b>Зачем это разработчику.</b> В командах с DevOps-практиками разработчик сам отвечает за то, как его код собирается, запускается и ведёт себя в проде. Понимая конвейер, вы читаете упавший пайплайн, чините Dockerfile и находите, почему под не стартует, не дожидаясь отдельного специалиста.</div>
+<h3>Базовые слова</h3>
+<ul>
+<li><b>Окружение (environment)</b> — отдельная копия системы: <code>dev</code> для разработки, <code>staging</code> для проверки, <code>production</code> для пользователей.</li>
+<li><b>Артефакт</b> — результат сборки, который потом разворачивают: бинарник, jar-файл, архив, Docker-образ.</li>
+<li><b>Пайплайн (конвейер)</b> — автоматическая последовательность шагов от коммита до деплоя.</li>
+<li><b>Деплой</b> — установка новой версии в окружение. <b>Релиз</b> — момент, когда пользователи получают изменение. Их можно разделить фича-флагами: код уже задеплоен, но функция включится позже.</li>
+</ul>`,
+check:[
+{ id:'c0-1a', type:'order', prompt:'Расставьте этапы пути кода в правильном порядке.', options:['Коммит и пулл-реквест','Сборка и тесты в CI','Сборка Docker-образа','Публикация образа в реестр','Деплой на staging','Деплой в production'], explanation:'Сначала код проверяется, потом упаковывается в артефакт, артефакт публикуется и уже затем разворачивается по окружениям.' },
+{ id:'c0-1b', type:'single', prompt:'Что такое артефакт сборки?', options:['Результат сборки, который разворачивают в окружениях: образ, бинарник, архив','Ошибка, оставшаяся после сборки','Файл с настройками CI','Ветка в Git с готовым кодом'], answer:0, explanation:'Артефакт собирается один раз и потом без изменений едет на staging и в прод.' }
+]},
+{ id:'0-2', title:'Что такое DevOps',
+html:`
+<p>Исторически разработчики (Dev) отвечали за новые фичи, а эксплуатация (Ops) — за стабильность серверов. Цели противоречили друг другу: одни хотели выпускать чаще, другие — менять как можно реже. Код «перебрасывали через стену», релизы шли раз в квартал, а ночные аварии разбирали люди, которые этот код не писали.</p>
+<p><b>DevOps</b> — набор практик и культура, которые убирают эту стену: одна команда отвечает за сервис целиком, от кода до работы в проде, и автоматизирует всё, что повторяется. Формула Amazon: <i>you build it, you run it</i>.</p>
+<h3>Модель CALMS</h3>
+<div class="cols">
+<div><b>Culture</b>Общая ответственность, разборы инцидентов без поиска виноватых.</div>
+<div><b>Automation</b>Сборка, тесты, деплой и инфраструктура выполняются машиной, а не по инструкции в вики.</div>
+<div><b>Lean</b>Маленькие порции изменений, короткий путь до пользователя, меньше ожидания.</div>
+<div><b>Measurement</b>Решения на основе метрик: частота деплоев, ошибки, время восстановления.</div>
+<div><b>Sharing</b>Общие инструменты, знания и дежурства между разработкой и эксплуатацией.</div>
+</div>
+<h3>DevOps — это не должность</h3>
+<p>Вакансия «DevOps-инженер» обычно означает человека, который строит CI/CD, платформу и инфраструктуру. Но если в компании есть «DevOps-отдел», куда разработчики пишут тикеты «задеплойте мне», стена просто переехала. Соседние подходы:</p>
+<ul>
+<li><b>SRE (Site Reliability Engineering)</b> — подход Google: эксплуатацию решают как инженерную задачу, надёжность измеряют через SLO и бюджет ошибок.</li>
+<li><b>Platform engineering</b> — отдельная команда делает внутреннюю платформу «самообслуживания», чтобы продуктовые команды деплоили сами.</li>
+</ul>
+<div class="note warn"><b>Типичный антипаттерн.</b> Купили Kubernetes и Jenkins, но релиз по-прежнему раз в месяц после согласования в трёх чатах. Инструменты без изменения процесса скорость не дают.</div>`,
+check:[
+{ id:'c0-2a', type:'multiple', prompt:'Какие элементы входят в модель CALMS?', options:['Culture','Automation','Measurement','Licensing','Monitoring only'], answer:[0,1,2], explanation:'CALMS: Culture, Automation, Lean, Measurement, Sharing.' },
+{ id:'c0-2b', type:'single', prompt:'Что означает принцип «you build it, you run it»?', options:['Команда, написавшая сервис, отвечает и за его работу в проде','Каждый разработчик собирает проект только локально','Эксплуатацией занимается отдельный отдел','Запускать можно только то, что собрано на своём ноутбуке'], answer:0, explanation:'Ответственность не передаётся через стену: авторы кода получают обратную связь от прода.' }
+]},
+{ id:'0-3', title:'Как измерить: метрики DORA',
+html:`
+<p>Исследовательская программа DORA (DevOps Research and Assessment) много лет опрашивает тысячи команд и выделила четыре метрики, которые отличают сильные команды от слабых. Две из них про скорость, две — про стабильность.</p>
+<div class="tbl"><table>
+<tr><th>Метрика</th><th>Что измеряет</th><th>Сильные команды</th></tr>
+<tr><td>Deployment frequency</td><td>Как часто деплоим в прод</td><td>По требованию, несколько раз в день</td></tr>
+<tr><td>Lead time for changes</td><td>Время от коммита до прода</td><td>Меньше суток</td></tr>
+<tr><td>Change failure rate</td><td>Доля деплоев, вызвавших сбой или откат</td><td>Около 5–15%</td></tr>
+<tr><td>Time to restore service</td><td>Сколько чиним сервис после сбоя</td><td>Меньше часа</td></tr>
+</table></div>
+<h3>Скорость и стабильность не враги</h3>
+<p>Главный вывод исследований: команды, которые деплоят чаще, ломают прод <b>реже</b>. Маленькое изменение проще проверить, проще понять, что именно сломалось, и проще откатить. Большой релиз раз в квартал содержит сотни изменений, и при сбое непонятно, какое виновато.</p>
+<h3>Как это считать на практике</h3>
+<ul>
+<li>Частоту и lead time берут из CI/CD: время коммита и время успешного деплоя.</li>
+<li>Change failure rate — из инцидентов и откатов, связанных с деплоем.</li>
+<li>Время восстановления — от начала инцидента до его закрытия.</li>
+</ul>
+<div class="note"><b>Не превращайте метрики в KPI.</b> Если премию платят за число деплоев, команда начнёт деплоить пустые коммиты. Метрики нужны, чтобы находить узкие места в процессе, а не чтобы сравнивать людей.</div>`,
+check:[
+{ id:'c0-3a', type:'match', prompt:'Сопоставьте метрику DORA и что она измеряет.', pairs:[['Deployment frequency','Как часто выкатываем в прод'],['Lead time for changes','Время от коммита до прода'],['Change failure rate','Доля неудачных деплоев'],['Time to restore','Время восстановления после сбоя']], explanation:'Первые две метрики про скорость, вторые две — про стабильность.' },
+{ id:'c0-3b', type:'input', prompt:'Сколько ключевых метрик выделяет DORA? Введите число.', answer:['4','четыре'], explanation:'Четыре: частота деплоев, lead time, change failure rate, время восстановления.' }
+]}
+  ],
+  test:[
+{ id:'t0-1', l:'0-1', type:'single', prompt:'Чем деплой отличается от релиза?', options:['Деплой — установка версии в окружение, релиз — момент, когда пользователи получают изменение','Это синонимы','Релиз выполняется только вручную','Деплой бывает только на staging'], answer:0, explanation:'Фича-флаги позволяют задеплоить код заранее, а включить (зарелизить) потом.' },
+{ id:'t0-2', l:'0-1', type:'single', prompt:'Зачем нужен staging?', options:['Проверить новую версию в окружении, максимально похожем на прод, до пользователей','Хранить резервные копии базы','Собирать Docker-образы','Запускать юнит-тесты'], answer:0, explanation:'Staging повторяет прод по конфигурации, но без реальных пользователей.' },
+{ id:'t0-3', l:'0-1', type:'single', prompt:'Тесты в CI упали. Что происходит с конвейером?', options:['Он останавливается, дальше в окружения ничего не уходит','Код всё равно деплоится, но с пометкой','Тесты перезапускаются до успеха','Деплой идёт только на прод'], answer:0, explanation:'Смысл конвейера — не пропускать сломанный код дальше.' },
+{ id:'t0-4', l:'0-2', type:'single', prompt:'Какая ситуация — антипаттерн DevOps?', options:['Разработчики пишут тикеты в «DevOps-отдел», чтобы тот задеплоил их код','Команда сама деплоит свой сервис через пайплайн','После инцидента проводят разбор без поиска виноватых','Инфраструктура описана в коде'], answer:0, explanation:'Это та же стена между Dev и Ops, только с новым названием.' },
+{ id:'t0-5', l:'0-2', type:'multiple', prompt:'Что относится к DevOps-практикам?', options:['Автоматизация сборки и деплоя','Маленькие частые изменения','Разборы инцидентов без поиска виноватых','Релизы раз в квартал с ручной установкой'], answer:[0,1,2], explanation:'Редкие ручные релизы — как раз то, от чего DevOps уходит.' },
+{ id:'t0-6', l:'0-2', type:'single', prompt:'Чем занимается подход SRE?', options:['Решает эксплуатацию инженерными методами и измеряет надёжность через SLO','Пишет фронтенд','Отвечает только за закупку серверов','Тестирует вручную'], answer:0, explanation:'SRE придумали в Google; ключевые понятия — SLI, SLO, бюджет ошибок.' },
+{ id:'t0-7', l:'0-3', type:'single', prompt:'Что показывают исследования DORA о связи скорости и стабильности?', options:['Команды, которые деплоят чаще, в среднем и ломают реже','Чем чаще деплой, тем больше сбоев','Связи нет','Стабильность достигается только редкими релизами'], answer:0, explanation:'Маленькие изменения проще проверить и откатить.' },
+{ id:'t0-8', l:'0-3', type:'multiple', prompt:'Какие метрики DORA относятся к стабильности?', options:['Change failure rate','Time to restore service','Deployment frequency','Lead time for changes'], answer:[0,1], explanation:'Частота деплоев и lead time — метрики скорости.' },
+{ id:'t0-9', l:'0-3', type:'single', prompt:'Почему метрики DORA плохо работают как KPI для премий?', options:['Их начинают «накручивать», и они перестают отражать реальность','Их невозможно посчитать','Они секретные','Они подходят только для Google'], answer:0, explanation:'Закон Гудхарта: когда мера становится целью, она перестаёт быть хорошей мерой.' }
+  ]
+});
+
+MODULES.push({
+  id:1, title:'Linux для DevOps', short:'Файлы и права, процессы, systemd, ресурсы и логи',
+  lessons:[
+{ id:'1-1', title:'Файловая система и права',
+html:`
+<p>Почти все серверы и контейнеры работают на Linux. В нём «всё есть файл»: конфиги, логи, устройства и даже информация о процессах. Поэтому первое, что нужно, — знать, где что лежит и кто имеет доступ.</p>
+<h3>Где что лежит</h3>
+<div class="tbl"><table>
+<tr><th>Путь</th><th>Что там</th></tr>
+<tr><td><code>/etc</code></td><td>Конфигурация системы и сервисов: <code>/etc/nginx/nginx.conf</code>, <code>/etc/hosts</code></td></tr>
+<tr><td><code>/var/log</code></td><td>Логи. <code>/var/lib</code> — данные сервисов (например, базы)</td></tr>
+<tr><td><code>/home/имя</code>, <code>/root</code></td><td>Домашние каталоги пользователей и root</td></tr>
+<tr><td><code>/usr/bin</code>, <code>/usr/local/bin</code></td><td>Программы. Свои скрипты кладут в <code>/usr/local/bin</code></td></tr>
+<tr><td><code>/tmp</code></td><td>Временные файлы, очищаются при перезагрузке</td></tr>
+<tr><td><code>/proc</code>, <code>/sys</code></td><td>Виртуальные файлы ядра: процессы, память, устройства</td></tr>
+</table></div>
+<h3>Права доступа</h3>
+<p>У каждого файла есть владелец, группа и три набора прав: для владельца (u), группы (g) и остальных (o). Права: <b>r</b> — чтение, <b>w</b> — запись, <b>x</b> — выполнение (для каталога — право в него войти).</p>
+<pre><span class="p">$ </span>ls -l deploy.sh
+-rwxr-x--- 1 deploy devs 812 Oct 12 10:31 deploy.sh
+<span class="c"># тип | u=rwx | g=r-x | o=--- | владелец deploy | группа devs</span></pre>
+<p>Права удобно записывать числом: r=4, w=2, x=1, сумма для каждой тройки. <code>rwxr-x---</code> — это 750. Покрутите калькулятор:</p>
+<div data-widget="chmod"></div>
+<h3>Главные команды</h3>
+<pre>chmod 640 app.conf          <span class="c"># права числом</span>
+chmod +x script.sh          <span class="c"># добавить выполнение всем</span>
+chown deploy:devs app.conf  <span class="c"># сменить владельца и группу</span>
+sudo -u postgres psql       <span class="c"># выполнить команду от другого пользователя</span>
+id                          <span class="c"># кто я и в каких группах</span></pre>
+<div class="note warn"><b>Не делайте <code>chmod 777</code>.</b> Если «не хватает прав», найдите, от какого пользователя работает процесс, и выдайте права именно ему. 777 разрешает любому пользователю системы подменить файл.</div>`,
+check:[
+{ id:'c1-1a', type:'input', prompt:'Какое число соответствует правам `rw-r--r--`?', answer:['644'], explanation:'rw- = 4+2 = 6, r-- = 4, r-- = 4.' },
+{ id:'c1-1b', type:'single', prompt:'Где обычно искать конфигурационный файл nginx?', options:['/etc/nginx/','/var/log/nginx/','/tmp/nginx/','/proc/nginx/'], answer:0, explanation:'Конфигурация живёт в /etc, а логи nginx — в /var/log/nginx.' }
+]},
+{ id:'1-2', title:'Процессы и сигналы',
+html:`
+<p>Процесс — запущенная программа. У каждого есть номер <b>PID</b>, родитель (PPID), пользователь, от которого он работает, и потребляемые ресурсы.</p>
+<pre><span class="p">$ </span>ps aux | grep node
+deploy  2143  3.1  4.2 1084512 171300 ?  Ssl 10:02  0:41 node dist/server.js
+<span class="c"># USER   PID  %CPU %MEM   VSZ     RSS        START  TIME  COMMAND</span></pre>
+<p>Интерактивно смотреть процессы удобно в <code>top</code> или <code>htop</code>: сортировка по CPU и памяти, нагрузка, свободная память.</p>
+<h3>Сигналы</h3>
+<p>Процессу можно отправить сигнал командой <code>kill</code>. Название обманчивое: она не обязательно убивает.</p>
+<div class="tbl"><table>
+<tr><th>Сигнал</th><th>Номер</th><th>Что значит</th></tr>
+<tr><td>SIGTERM</td><td>15</td><td>Вежливая просьба завершиться. Процесс может доделать запросы, закрыть соединения. Отправляется по умолчанию</td></tr>
+<tr><td>SIGKILL</td><td>9</td><td>Немедленное убийство ядром. Перехватить нельзя, процесс ничего не успеет сохранить</td></tr>
+<tr><td>SIGINT</td><td>2</td><td>То, что отправляет Ctrl+C</td></tr>
+<tr><td>SIGHUP</td><td>1</td><td>Многие демоны (nginx) перечитывают по нему конфиг</td></tr>
+</table></div>
+<pre>kill 2143        <span class="c"># SIGTERM</span>
+kill -9 2143     <span class="c"># SIGKILL — только если TERM не помог</span>
+pkill -f server.js</pre>
+<h3>Коды выхода</h3>
+<p>Завершаясь, процесс возвращает число: <code>0</code> — успех, всё остальное — ошибка. Код последней команды лежит в <code>$?</code>. На кодах выхода построены CI и скрипты: шаг с ненулевым кодом считается упавшим. Код 137 = 128 + 9 означает, что процесс убили SIGKILL — часто это OOM killer.</p>
+<div class="note"><b>Почему это важно в контейнерах.</b> При остановке Docker и Kubernetes шлют главному процессу SIGTERM и ждут (по умолчанию 10 и 30 секунд), затем SIGKILL. Если приложение не обрабатывает SIGTERM, оно обрывает запросы на полуслове при каждом деплое.</div>`,
+check:[
+{ id:'c1-2a', type:'single', prompt:'Какой сигнал нельзя перехватить и обработать в приложении?', options:['SIGKILL (9)','SIGTERM (15)','SIGHUP (1)','SIGINT (2)'], answer:0, explanation:'SIGKILL выполняется ядром, процесс о нём не узнаёт.' },
+{ id:'c1-2b', type:'analyze', prompt:'Контейнер завершился так. Что, вероятнее всего, случилось?', code:'$ docker inspect -f "{{.State.ExitCode}} {{.State.OOMKilled}}" api\n137 true', options:['Процесс превысил лимит памяти, и его убили SIGKILL','Приложение штатно завершилось','Не нашёлся файл конфигурации','Ошибка синтаксиса в коде'], answer:0, explanation:'137 = 128 + 9 (SIGKILL), а OOMKilled=true прямо говорит о нехватке памяти.' }
+]},
+{ id:'1-3', title:'systemd и сервисы',
+html:`
+<p>Если на сервере нужно, чтобы приложение запускалось при загрузке и поднималось после падения, его оформляют как сервис <b>systemd</b>. Это система инициализации почти всех современных дистрибутивов: процесс с PID 1, который запускает и следит за остальными.</p>
+<h3>Unit-файл</h3>
+<pre><span class="c"># /etc/systemd/system/api.service</span>
+[Unit]
+Description=Orders API
+After=network-online.target
+
+[Service]
+User=deploy
+WorkingDirectory=/opt/api
+EnvironmentFile=/etc/api.env
+ExecStart=/usr/bin/node dist/server.js
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target</pre>
+<ul>
+<li><code>User</code> — не запускайте сервисы от root без нужды.</li>
+<li><code>Restart=on-failure</code> — перезапуск при ненулевом коде выхода.</li>
+<li><code>WantedBy=multi-user.target</code> — запускать при обычной загрузке системы.</li>
+</ul>
+<h3>Управление</h3>
+<pre>sudo systemctl daemon-reload        <span class="c"># перечитать unit-файлы после правки</span>
+sudo systemctl enable --now api     <span class="c"># автозапуск + запустить сейчас</span>
+systemctl status api                <span class="c"># состояние, PID, последние строки лога</span>
+sudo systemctl restart api
+journalctl -u api -f                <span class="c"># лог сервиса в реальном времени</span>
+journalctl -u api --since "1 hour ago"</pre>
+<div class="note"><b>Частая ошибка.</b> Поправили unit-файл, сделали <code>restart</code>, а изменения не применились. Сначала нужен <code>daemon-reload</code>: systemd кэширует описания юнитов.</div>
+<p>В Kubernetes роль systemd по перезапуску и слежению за процессами берут на себя kubelet и контроллеры, но на виртуалках, базах и раннерах CI systemd встречается постоянно.</p>`,
+check:[
+{ id:'c1-3a', type:'single', prompt:'Какая команда включит автозапуск сервиса при загрузке и сразу его запустит?', options:['systemctl enable --now api','systemctl start api','systemctl reload api','journalctl -u api'], answer:0, explanation:'enable создаёт автозапуск, флаг --now ещё и запускает сервис сейчас.' },
+{ id:'c1-3b', type:'input', prompt:'Какой командой посмотреть лог сервиса api в реальном времени? (journalctl …)', answer:['journalctl -u api -f','journalctl -fu api','journalctl -f -u api','journalctl --follow -u api','journalctl -u api --follow'], explanation:'`-u` выбирает юнит, `-f` следит за новыми строками, как tail -f.' }
+]},
+{ id:'1-4', title:'Ресурсы и диагностика',
+html:`
+<p>Сервис тормозит или падает. Прежде чем читать код, проверьте четыре ресурса: CPU, память, диск и сеть. Это занимает минуту.</p>
+<h3>CPU и нагрузка</h3>
+<pre><span class="p">$ </span>uptime
+ 14:02:11 up 31 days,  2 users,  load average: 7.85, 6.12, 3.40</pre>
+<p><b>Load average</b> — среднее число процессов, которые работают или ждут CPU (и диск) за 1, 5 и 15 минут. Сравнивайте с числом ядер (<code>nproc</code>): на 4 ядрах load 7,85 означает очередь. Рост слева направо — нагрузка увеличивается.</p>
+<h3>Память</h3>
+<pre><span class="p">$ </span>free -h
+       total   used   free  shared  buff/cache  available
+Mem:   7.7Gi  6.9Gi  180Mi   12Mi       620Mi      410Mi</pre>
+<p>Смотрите на <code>available</code>, а не на <code>free</code>: Linux занимает свободную память под кэш и отдаёт её по требованию. Когда памяти не остаётся, ядро запускает <b>OOM killer</b> и убивает самый «тяжёлый» процесс. Следы ищите в <code>dmesg | grep -i oom</code>.</p>
+<h3>Диск</h3>
+<pre>df -h                    <span class="c"># занятость разделов</span>
+df -i                    <span class="c"># занятость inode: место есть, а файлы не создаются</span>
+du -sh /var/log/* | sort -h   <span class="c"># что занимает место</span></pre>
+<p>Классика: диск заполнили логи или старые Docker-образы (<code>docker system df</code>, <code>docker image prune</code>). При 100% базы и сервисы падают с неочевидными ошибками.</p>
+<h3>Сеть и порты</h3>
+<pre>ss -tlnp                 <span class="c"># какие TCP-порты слушаются и каким процессом</span>
+curl -sv localhost:8080/health
+lsof -i :8080            <span class="c"># кто занял порт</span></pre>
+<div class="note"><b>Порядок проверки</b>: <code>uptime</code> → <code>free -h</code> → <code>df -h</code> → <code>ss -tlnp</code> → <code>journalctl -u сервис</code>. Пять команд закрывают большую часть случаев «сервер странно себя ведёт».</div>`,
+check:[
+{ id:'c1-4a', type:'analyze', prompt:'Приложение пишет «No space left on device». Что видно из вывода?', code:'$ df -h /var\nFilesystem  Size  Used Avail Use% Mounted on\n/dev/sda2    40G   18G   22G  45% /var\n$ df -i /var\nFilesystem  Inodes  IUsed  IFree IUse% Mounted on\n/dev/sda2   2.6M    2.6M     0  100% /var', options:['Закончились inode: слишком много мелких файлов','Диск заполнен данными','Проблема с правами','Сломалась файловая система'], answer:0, explanation:'Место есть (45%), но inode заняты на 100%. Обычно это миллионы мелких файлов: сессии, кэш, временные файлы.' },
+{ id:'c1-4b', type:'single', prompt:'Какую колонку `free -h` смотреть, чтобы понять, сколько памяти реально доступно приложениям?', options:['available','free','shared','total'], answer:0, explanation:'buff/cache освобождается по требованию, поэтому реальный запас показывает available.' }
+]}
+  ],
+  test:[
+{ id:'t1-1', l:'1-1', type:'single', prompt:'Что означают права `drwxr-x---` у каталога для группы?', options:['Группа может просматривать содержимое и заходить в каталог, но не создавать файлы','Группа может всё','Группа не может зайти в каталог','Группа может только создавать файлы'], answer:0, explanation:'r-x: чтение списка и вход (x), без записи.' },
+{ id:'t1-2', l:'1-1', type:'input', prompt:'Какие права (числом) рекомендуются для приватного SSH-ключа `~/.ssh/id_ed25519`?', answer:['600','400'], explanation:'Только владелец читает (и при необходимости пишет). SSH откажется использовать ключ с более открытыми правами.' },
+{ id:'t1-3', l:'1-1', type:'single', prompt:'Сервис пишет «Permission denied» при чтении конфига. Что правильно сделать?', options:['Узнать, от какого пользователя работает сервис, и дать права ему (chown/chmod)','Выполнить chmod 777 на весь /etc','Запустить сервис от root','Удалить конфиг'], answer:0, explanation:'Минимально необходимые права выдают конкретному пользователю или группе.' },
+{ id:'t1-4', l:'1-2', type:'single', prompt:'Какой сигнал по умолчанию отправляет `kill PID`?', options:['SIGTERM','SIGKILL','SIGHUP','SIGSTOP'], answer:0, explanation:'Без флага kill отправляет SIGTERM (15).' },
+{ id:'t1-5', l:'1-2', type:'single', prompt:'Почему важно обрабатывать SIGTERM в приложении, которое работает в контейнере?', options:['Чтобы при деплое корректно завершить текущие запросы до остановки','Чтобы контейнер быстрее собирался','Чтобы не нужен был healthcheck','Это нужно только для Windows'], answer:0, explanation:'Оркестратор останавливает контейнеры через SIGTERM; без обработки запросы обрываются.' },
+{ id:'t1-6', l:'1-2', type:'input', prompt:'Какой код выхода означает успешное завершение команды?', answer:['0'], explanation:'Ноль — успех, любое другое значение — ошибка.' },
+{ id:'t1-7', l:'1-3', type:'order', prompt:'Вы поправили unit-файл сервиса api. Расставьте команды в правильном порядке.', options:['sudo systemctl daemon-reload','sudo systemctl restart api','systemctl status api'], explanation:'Сначала systemd перечитывает описание, потом перезапускаем сервис и проверяем результат.' },
+{ id:'t1-8', l:'1-3', type:'single', prompt:'Что делает `Restart=on-failure` в unit-файле?', options:['Перезапускает сервис, если он завершился с ошибкой','Перезапускает сервис каждые 5 минут','Запрещает перезапуск','Перезагружает сервер при сбое'], answer:0, explanation:'Перезапуск при ненулевом коде выхода или аварийном завершении.' },
+{ id:'t1-9', l:'1-4', type:'analyze', prompt:'Сервер на 2 ядрах. Как оценить нагрузку?', code:'$ uptime\n 10:15:02 up 3 days, load average: 0.42, 0.55, 0.61\n$ nproc\n2', options:['Нагрузка низкая, очереди за CPU нет','Сервер перегружен','Нагрузка резко растёт','Нельзя сказать без top'], answer:0, explanation:'Load меньше числа ядер и даже немного снижается.' },
+{ id:'t1-10', l:'1-4', type:'match', prompt:'Сопоставьте вопрос и команду.', pairs:[['Сколько места на дисках?','df -h'],['Какой процесс слушает порт?','ss -tlnp'],['Сколько памяти доступно?','free -h'],['Что занимает место в каталоге?','du -sh *']], explanation:'Эти четыре команды стоит помнить наизусть.' }
+  ]
+});
+
+MODULES.push({
+  id:2, title:'Bash и автоматизация', short:'Потоки и пайпы, скрипты, SSH и cron',
+  lessons:[
+{ id:'2-1', title:'Потоки, перенаправления и пайпы',
+html:`
+<p>У каждого процесса три стандартных потока: <b>stdin</b> (0, ввод), <b>stdout</b> (1, обычный вывод) и <b>stderr</b> (2, ошибки). Оболочка позволяет перенаправлять их в файлы и в другие программы.</p>
+<div class="tbl"><table>
+<tr><th>Запись</th><th>Что делает</th></tr>
+<tr><td><code>cmd &gt; out.txt</code></td><td>stdout в файл (перезаписать)</td></tr>
+<tr><td><code>cmd &gt;&gt; out.txt</code></td><td>stdout в файл (дописать в конец)</td></tr>
+<tr><td><code>cmd 2&gt; err.txt</code></td><td>только ошибки в файл</td></tr>
+<tr><td><code>cmd &gt; all.log 2&gt;&amp;1</code></td><td>stdout и stderr в один файл</td></tr>
+<tr><td><code>cmd &gt; /dev/null</code></td><td>выбросить вывод</td></tr>
+<tr><td><code>cmd1 | cmd2</code></td><td>stdout первой команды на stdin второй</td></tr>
+</table></div>
+<p>Порядок в <code>&gt; all.log 2&gt;&amp;1</code> важен: «2&gt;&amp;1» значит «отправь stderr туда же, куда сейчас идёт stdout». Если написать наоборот, ошибки уйдут на экран.</p>
+<h3>Набор для разбора логов</h3>
+<pre>grep -i error app.log            <span class="c"># строки с error без учёта регистра</span>
+grep -c " 500 " access.log       <span class="c"># посчитать строки</span>
+tail -f app.log | grep --line-buffered WARN
+awk '{print $1}' access.log      <span class="c"># первое поле (по пробелам)</span>
+sed 's/http:/https:/g' urls.txt  <span class="c"># замена</span>
+sort | uniq -c | sort -rn        <span class="c"># частотный словарь</span></pre>
+<h3>Пример: топ IP-адресов, получивших 5xx</h3>
+<pre>awk '$9 ~ /^5/ {print $1}' /var/log/nginx/access.log \
+  | sort | uniq -c | sort -rn | head -5</pre>
+<p>Каждая программа делает одну вещь: awk выбирает строки с кодом 5xx и печатает IP, sort группирует одинаковые, <code>uniq -c</code> считает, второй sort упорядочивает по убыванию, head оставляет пять. Такие однострочники решают задачи, для которых не нужен отдельный скрипт.</p>
+<div class="note"><b>xargs</b> превращает строки в аргументы: <code>find . -name "*.tmp" | xargs rm</code>. Для имён с пробелами используйте <code>find … -print0 | xargs -0</code>.</div>`,
+check:[
+{ id:'c2-1a', type:'single', prompt:'Как записать и обычный вывод, и ошибки команды в один файл?', options:['cmd > all.log 2>&1','cmd 2>&1 > all.log','cmd | all.log','cmd >> 2 all.log'], answer:0, explanation:'Сначала stdout направляется в файл, затем stderr туда же.' },
+{ id:'c2-1b', type:'order', prompt:'Соберите конвейер «сколько раз встречается каждое значение, по убыванию».', options:['cut -d" " -f1 access.log','sort','uniq -c','sort -rn'], explanation:'uniq считает только соседние одинаковые строки, поэтому сначала нужен sort.' }
+]},
+{ id:'2-2', title:'Скрипты, которые не ломаются молча',
+html:`
+<p>Bash-скрипт — это команды, записанные в файл. Он нужен для деплоя, бэкапов, подготовки окружения. Главная опасность — по умолчанию Bash продолжает работать после ошибки.</p>
+<pre>#!/usr/bin/env bash
+set -euo pipefail
+
+APP_DIR="/opt/api"
+VERSION="\${1:?Укажите версию: ./deploy.sh 1.4.2}"
+BACKUP="/var/backups/api-$(date +%F-%H%M).tar.gz"
+
+log() { echo "[$(date +%T)] $*" &gt;&amp;2; }
+
+log "Бэкап в $BACKUP"
+tar -czf "$BACKUP" -C "$APP_DIR" .
+
+for host in web1 web2; do
+  log "Деплой $VERSION на $host"
+  ssh "deploy@$host" "cd $APP_DIR &amp;&amp; ./update.sh $VERSION"
+done
+
+if curl -fsS "https://api.example.com/health" &gt; /dev/null; then
+  log "Готово"
+else
+  log "Healthcheck не прошёл"; exit 1
+fi</pre>
+<h3>Разбор</h3>
+<ul>
+<li><code>#!/usr/bin/env bash</code> — шебанг: каким интерпретатором выполнять файл. Не забудьте <code>chmod +x</code>.</li>
+<li><code>set -e</code> — выйти при первой ошибке; <code>-u</code> — ошибка при обращении к неопределённой переменной; <code>-o pipefail</code> — пайп считается упавшим, если упала любая его часть, а не только последняя.</li>
+<li><code>"\${1:?текст}"</code> — первый аргумент, а если его нет, выход с сообщением. <code>"\${VAR:-default}"</code> подставит значение по умолчанию.</li>
+<li><code>$(команда)</code> — подстановка вывода команды.</li>
+<li><code>&amp;&amp;</code> — выполнить вторую команду, только если первая успешна; <code>||</code> — только если упала.</li>
+</ul>
+<h3>Кавычки</h3>
+<p>Переменные почти всегда берите в двойные кавычки: <code>rm -rf "$DIR/tmp"</code>. Без кавычек пробел в значении разобьёт путь на два аргумента, а пустая переменная превратит команду в <code>rm -rf /tmp</code>. Одинарные кавычки не подставляют переменные вообще.</p>
+<div class="note warn"><b>Почему set -u спасает.</b> Строка <code>rm -rf "$BUILD_DIR/"*</code> с опечаткой в имени переменной без <code>-u</code> удалит содержимое корня. С <code>-u</code> скрипт остановится с ошибкой.</div>
+<p>Проверяйте скрипты линтером <b>ShellCheck</b>: он находит забытые кавычки и другие ловушки. Если скрипт перерос 100 строк и в нём появились структуры данных, пора переписать его на Python или Go.</p>`,
+check:[
+{ id:'c2-2a', type:'match', prompt:'Сопоставьте опцию и её эффект.', pairs:[['set -e','выход при ошибке любой команды'],['set -u','ошибка при неопределённой переменной'],['set -o pipefail','пайп падает, если упала любая его часть']], explanation:'Обычно все три включают одной строкой `set -euo pipefail`.' },
+{ id:'c2-2b', type:'single', prompt:'Что выведет `echo \'$HOME\'` (в одинарных кавычках)?', options:['Буквально $HOME','Путь к домашнему каталогу','Пустую строку','Ошибку'], answer:0, explanation:'В одинарных кавычках подстановки не выполняются.' }
+]},
+{ id:'2-3', title:'SSH и задачи по расписанию',
+html:`
+<h3>SSH по ключам</h3>
+<p>На серверы заходят по SSH, и только по ключам: пароли перебирают боты со всего интернета. Ключевая пара — приватный ключ (остаётся у вас) и публичный (кладётся на сервер).</p>
+<pre>ssh-keygen -t ed25519 -C "dev@laptop"      <span class="c"># создать пару в ~/.ssh/</span>
+ssh-copy-id deploy@203.0.113.10            <span class="c"># добавить публичный ключ в authorized_keys</span>
+ssh deploy@203.0.113.10</pre>
+<p>Чтобы не набирать адреса, заведите <code>~/.ssh/config</code>:</p>
+<pre>Host prod-web
+  HostName 203.0.113.10
+  User deploy
+  IdentityFile ~/.ssh/id_ed25519
+
+Host db-private
+  HostName 10.0.2.15
+  ProxyJump prod-web           <span class="c"># зайти через бастион</span></pre>
+<pre>ssh prod-web
+rsync -avz ./dist/ prod-web:/opt/api/dist/     <span class="c"># синхронизировать файлы</span>
+ssh -L 5432:localhost:5432 db-private          <span class="c"># пробросить порт базы к себе</span></pre>
+<p>На сервере в <code>/etc/ssh/sshd_config</code> отключают вход по паролю и под root: <code>PasswordAuthentication no</code>, <code>PermitRootLogin no</code>.</p>
+<h3>cron</h3>
+<p>cron запускает команды по расписанию. Расписание — пять полей: минута, час, день месяца, месяц, день недели. Редактировать свой список задач — <code>crontab -e</code>.</p>
+<pre><span class="c"># бэкап каждую ночь в 03:00, вывод в лог</span>
+0 3 * * * /usr/local/bin/backup.sh &gt;&gt; /var/log/backup.log 2&gt;&amp;1</pre>
+<div data-widget="cron"></div>
+<h3>Ловушки cron</h3>
+<ul>
+<li>У cron минимальное окружение: другой <code>PATH</code>, нет переменных из <code>.bashrc</code>. Пишите полные пути к программам.</li>
+<li>Без перенаправления вывод теряется. Всегда пишите лог.</li>
+<li>Время — по часовому поясу сервера, часто UTC.</li>
+<li>Если задача может работать дольше интервала, две копии наложатся. Защита — <code>flock -n /tmp/job.lock команда</code>.</li>
+</ul>
+<p>В Kubernetes вместо cron используют объект <b>CronJob</b> с тем же синтаксисом расписания, а в systemd — таймеры.</p>`,
+check:[
+{ id:'c2-3a', type:'single', prompt:'Когда выполнится задача `30 2 * * 1`?', options:['Каждый понедельник в 02:30','Каждый день в 02:30 и 01:00','2 числа каждого месяца в 00:30','Каждые 30 минут во второй час'], answer:0, explanation:'Минута 30, час 2, любой день и месяц, день недели 1 — понедельник.' },
+{ id:'c2-3b', type:'single', prompt:'Какой ключ уходит на сервер при настройке входа по SSH-ключу?', options:['Публичный','Приватный','Оба','Никакой, только пароль'], answer:0, explanation:'Приватный ключ никогда не покидает вашу машину.' }
+]}
+  ],
+  test:[
+{ id:'t2-1', l:'2-1', type:'single', prompt:'Чем `>` отличается от `>>`?', options:['> перезаписывает файл, >> дописывает в конец','> пишет ошибки, >> обычный вывод','Ничем','>> работает только с /dev/null'], answer:0, explanation:'Если важно не потерять старое содержимое, используйте >>.' },
+{ id:'t2-2', l:'2-1', type:'single', prompt:'Что делает `|` между командами?', options:['Передаёт stdout первой команды на stdin второй','Запускает команды параллельно без связи','Выполняет вторую, если первая упала','Сохраняет вывод в файл'], answer:0, explanation:'Пайп соединяет вывод и ввод.' },
+{ id:'t2-3', l:'2-1', type:'analyze', prompt:'Что делает этот конвейер?', code:'grep " 404 " access.log | awk \'{print $7}\' | sort | uniq -c | sort -rn | head -3', options:['Показывает три самых частых URL, вернувших 404','Удаляет строки с 404','Считает общее количество запросов','Показывает три последних запроса'], answer:0, explanation:'Фильтр по 404 → поле с путём → подсчёт → сортировка по частоте → топ-3.' },
+{ id:'t2-4', l:'2-2', type:'single', prompt:'Зачем нужен `set -o pipefail`?', options:['Чтобы ошибка в середине пайпа не терялась','Чтобы пайпы работали быстрее','Чтобы включить цветной вывод','Чтобы разрешить неопределённые переменные'], answer:0, explanation:'Без него код выхода пайпа — это код последней команды.' },
+{ id:'t2-5', l:'2-2', type:'single', prompt:'Почему переменные стоит заключать в двойные кавычки: `"$DIR"`?', options:['Чтобы значение с пробелами или пустое значение не ломало команду','Чтобы переменная не подставлялась','Это нужно только для чисел','Так быстрее'], answer:0, explanation:'Без кавычек значение разбивается по пробелам и раскрываются шаблоны.' },
+{ id:'t2-6', l:'2-2', type:'input', prompt:'Как называется линтер для shell-скриптов, который находит забытые кавычки?', answer:['shellcheck','ShellCheck'], explanation:'ShellCheck есть в пакетах всех дистрибутивов и в виде расширения для редакторов.' },
+{ id:'t2-7', l:'2-3', type:'single', prompt:'Скрипт работает из терминала, но из cron падает с «command not found». Вероятная причина?', options:['В cron другой PATH; нужно указать полные пути','cron не умеет запускать bash','Нужно перезагрузить сервер','У скрипта нет расширения .sh'], answer:0, explanation:'Окружение cron минимально, переменные из .bashrc не загружаются.' },
+{ id:'t2-8', l:'2-3', type:'input', prompt:'Запишите cron-расписание «каждые 15 минут».', answer:['*/15 * * * *','0,15,30,45 * * * *'], explanation:'Шаг */15 в поле минут.' },
+{ id:'t2-9', l:'2-3', type:'single', prompt:'Что делает директива `ProxyJump` в ~/.ssh/config?', options:['Подключается к целевому хосту через промежуточный (бастион)','Ускоряет передачу файлов','Меняет порт SSH','Отключает проверку ключей'], answer:0, explanation:'Так заходят на серверы в приватной сети через один публичный бастион.' }
+  ]
+});
+
+// ====== КОНТЕНТ КУРСА: модули 3–4 ======
+MODULES.push({
+  id:3, title:'Git и командная работа', short:'Модель Git, merge и rebase, стратегии ветвления',
+  lessons:[
+{ id:'3-1', title:'Как Git хранит историю',
+html:`
+<p>Git — основа любого конвейера: пайплайны запускаются по событиям в репозитории, деплой привязан к коммиту, откат — это возврат к старому коммиту. Поэтому полезно понимать модель, а не только помнить команды.</p>
+<h3>Коммит — снимок, ветка — указатель</h3>
+<ul>
+<li><b>Коммит</b> — снимок всех файлов проекта плюс автор, сообщение и ссылка на родителя. Идентификатор — SHA-хеш, например <code>3f9c2ab</code>. Изменить коммит нельзя: любое изменение даёт новый хеш.</li>
+<li><b>Ветка</b> — просто подвижный указатель на коммит. Создать ветку — записать 41 байт.</li>
+<li><b>HEAD</b> — указатель на то, где вы сейчас (обычно на текущую ветку).</li>
+</ul>
+<div class="flow"><span>a1</span><b>←</b><span>b2</span><b>←</b><span>c3</span><b>←</b><span class="hl">d4 ← main ← HEAD</span></div>
+<h3>Три зоны</h3>
+<p>Рабочий каталог → <b>индекс</b> (staging area, то, что войдёт в коммит) → репозиторий.</p>
+<pre>git status
+git add src/api.ts             <span class="c"># в индекс</span>
+git commit -m "fix: таймаут запроса к платежам"
+git log --oneline --graph -10
+git diff                       <span class="c"># изменения, ещё не добавленные в индекс</span>
+git diff --staged              <span class="c"># что войдёт в коммит</span></pre>
+<h3>Удалённые репозитории</h3>
+<p><code>origin</code> — имя удалённого репозитория по умолчанию. <code>origin/main</code> — ваша локальная копия того, где была ветка main на сервере при последней синхронизации.</p>
+<pre>git fetch            <span class="c"># скачать новые коммиты, ничего не меняя в ваших ветках</span>
+git pull             <span class="c"># fetch + слить изменения в текущую ветку</span>
+git push -u origin feature/payments</pre>
+<div class="note"><b>Для CI важно:</b> пайплайн собирает конкретный коммит, а не «ветку». Поэтому образ тегируют хешем коммита: по тегу <code>app:3f9c2ab</code> всегда можно найти точный код, который работает в проде.</div>`,
+check:[
+{ id:'c3-1a', type:'single', prompt:'Что такое ветка в Git?', options:['Подвижный указатель на коммит','Полная копия всех файлов проекта','Отдельный репозиторий','Список изменённых файлов'], answer:0, explanation:'Поэтому ветки в Git создаются мгновенно.' },
+{ id:'c3-1b', type:'single', prompt:'Чем `git fetch` отличается от `git pull`?', options:['fetch только скачивает изменения, pull ещё и сливает их в текущую ветку','Ничем','fetch отправляет изменения на сервер','pull работает только с тегами'], answer:0, explanation:'pull = fetch + merge (или rebase, если так настроено).' }
+]},
+{ id:'3-2', title:'Merge, rebase и откаты',
+html:`
+<p>Две ветки разошлись: в main появились новые коммиты, пока вы делали фичу. Объединить их можно двумя способами.</p>
+<div class="cols">
+<div><b>merge</b>Создаёт коммит слияния с двумя родителями. История честная, но с «ромбиками». Ничего не переписывает.</div>
+<div><b>rebase</b>Переносит ваши коммиты поверх свежего main, создавая их заново с новыми хешами. История линейная.</div>
+</div>
+<pre>git switch feature/payments
+git rebase main          <span class="c"># переиграть свои коммиты поверх main</span>
+<span class="c"># или</span>
+git merge main           <span class="c"># влить main в свою ветку</span></pre>
+<p><b>Fast-forward</b> — частный случай: если ваша ветка просто впереди main, Git передвигает указатель без нового коммита.</p>
+<div class="note warn"><b>Золотое правило:</b> не делайте rebase веток, которые уже забрали другие люди. Rebase меняет хеши, и у коллег история разойдётся. Свою личную ветку перед PR — можно, тогда пуш требует <code>git push --force-with-lease</code>.</div>
+<h3>Конфликты</h3>
+<p>Если обе ветки изменили одни и те же строки, Git останавливается и размечает файл:</p>
+<pre>&lt;&lt;&lt;&lt;&lt;&lt;&lt; HEAD
+timeout: 5000
+=======
+timeout: 10000
+&gt;&gt;&gt;&gt;&gt;&gt;&gt; feature/payments</pre>
+<p>Выберите правильный вариант, удалите маркеры, затем <code>git add файл</code> и <code>git merge --continue</code> (или <code>git rebase --continue</code>). Передумали — <code>--abort</code>.</p>
+<h3>Как отменять</h3>
+<div class="tbl"><table>
+<tr><th>Команда</th><th>Что делает</th><th>Когда</th></tr>
+<tr><td><code>git revert &lt;sha&gt;</code></td><td>Новый коммит, отменяющий изменения</td><td>Коммит уже в общей ветке (main)</td></tr>
+<tr><td><code>git reset --soft HEAD~1</code></td><td>Убрать последний коммит, изменения остаются в индексе</td><td>Локально, ещё не запушено</td></tr>
+<tr><td><code>git reset --hard &lt;sha&gt;</code></td><td>Откатить ветку и рабочие файлы. Несохранённое теряется</td><td>Осторожно, только локально</td></tr>
+<tr><td><code>git restore файл</code></td><td>Отменить незакоммиченные правки в файле</td><td>Рабочий каталог</td></tr>
+</table></div>
+<p>Потеряли коммит после reset? <code>git reflog</code> хранит, куда указывал HEAD, и почти всегда позволяет вернуться.</p>`,
+check:[
+{ id:'c3-2a', type:'single', prompt:'Плохой коммит уже попал в main и задеплоен. Как его безопасно отменить?', options:['git revert <sha> и запушить','git reset --hard HEAD~1 и git push --force','Удалить репозиторий','git commit --amend'], answer:0, explanation:'revert не переписывает общую историю, он добавляет отменяющий коммит.' },
+{ id:'c3-2b', type:'single', prompt:'Почему нельзя делать rebase общей ветки, с которой работают коллеги?', options:['Rebase создаёт коммиты с новыми хешами, и история у коллег разойдётся','Rebase удаляет файлы','Rebase работает только локально','Это запрещено настройками GitHub'], answer:0, explanation:'Переписанная история конфликтует с копиями у других людей.' }
+]},
+{ id:'3-3', title:'Стратегии ветвления и версии',
+html:`
+<p>Как команда организует ветки, напрямую влияет на скорость доставки. Три распространённые модели:</p>
+<div class="cols">
+<div><b>GitFlow</b>Ветки develop, release, hotfix, feature. Подходит для коробочных продуктов с редкими версиями. Для веб-сервисов тяжеловат: долгоживущие ветки, большие слияния.</div>
+<div><b>GitHub Flow</b>Есть только main, который всегда готов к деплою. Фича — короткая ветка → PR → ревью и CI → merge → деплой.</div>
+<div><b>Trunk-based</b>Все часто (раз в день и чаще) вливают маленькие изменения в main. Незаконченное прячут за фича-флагами. Рекомендация DORA для высокой скорости.</div>
+</div>
+<h3>Пулл-реквест как ворота качества</h3>
+<ul>
+<li>Ветку main защищают: прямой push запрещён, merge только после зелёного CI и одобрения ревьюера.</li>
+<li>Маленький PR (до 200–400 строк) ревьюят быстро и внимательно; огромный — по диагонали.</li>
+<li><b>Squash merge</b> сжимает коммиты ветки в один — история main становится читаемой.</li>
+</ul>
+<h3>Версии и теги</h3>
+<p><b>Семантическое версионирование</b> — <code>MAJOR.MINOR.PATCH</code>, например 2.4.1:</p>
+<ul>
+<li>MAJOR — несовместимые изменения API;</li>
+<li>MINOR — новая функциональность с обратной совместимостью;</li>
+<li>PATCH — исправления ошибок.</li>
+</ul>
+<pre>git tag -a v2.4.1 -m "Release 2.4.1"
+git push origin v2.4.1           <span class="c"># часто именно тег запускает релизный пайплайн</span></pre>
+<p><b>Conventional Commits</b> — формат сообщений <code>feat: …</code>, <code>fix: …</code>, <code>feat!: …</code> (ломающее изменение). По нему инструменты сами вычисляют следующую версию и пишут changelog.</p>
+<h3>Чего не должно быть в репозитории</h3>
+<ul>
+<li>Секретов: паролей, токенов, ключей. Даже удалённый в следующем коммите секрет остаётся в истории — его нужно отзывать и перевыпускать.</li>
+<li>Артефактов сборки и зависимостей (<code>node_modules</code>, <code>dist</code>) — для этого <code>.gitignore</code>.</li>
+<li><code>.env</code> с реальными значениями. Коммитят шаблон <code>.env.example</code>.</li>
+</ul>`,
+check:[
+{ id:'c3-3a', type:'single', prompt:'Версия 3.2.7. Вы добавили новую функцию без поломки API. Какая будет следующая версия?', options:['3.3.0','3.2.8','4.0.0','3.3.7'], answer:0, explanation:'Новая обратно совместимая функциональность увеличивает MINOR и обнуляет PATCH.' },
+{ id:'c3-3b', type:'single', prompt:'Разработчик случайно запушил API-ключ и сразу удалил его следующим коммитом. Что нужно сделать?', options:['Отозвать ключ и выпустить новый: он остался в истории','Ничего, он уже удалён','Переименовать файл','Сделать репозиторий публичным'], answer:0, explanation:'История Git хранит все версии файлов. Скомпрометированный секрет надо считать утёкшим.' }
+]}
+  ],
+  test:[
+{ id:'t3-1', l:'3-1', type:'single', prompt:'Почему Docker-образ удобно тегировать хешем коммита?', options:['По тегу можно точно найти код, который работает в окружении','Так образ меньше весит','Иначе Docker не соберёт образ','Хеш шифрует образ'], answer:0, explanation:'Хеш однозначно указывает на снимок кода.' },
+{ id:'t3-2', l:'3-1', type:'single', prompt:'Что попадёт в коммит после `git commit`?', options:['То, что добавлено в индекс через git add','Все изменённые файлы в каталоге','Только новые файлы','Последний открытый в редакторе файл'], answer:0, explanation:'Коммит фиксирует индекс. Для всех отслеживаемых файлов есть `git commit -a`.' },
+{ id:'t3-3', l:'3-1', type:'input', prompt:'Как по умолчанию называется удалённый репозиторий, из которого вы клонировали проект?', answer:['origin'], explanation:'Имя можно поменять, но origin — стандарт.' },
+{ id:'t3-4', l:'3-2', type:'single', prompt:'Вы сделали rebase своей ветки после того, как уже её запушили. Как безопаснее отправить её на сервер?', options:['git push --force-with-lease','git push --force без проверки','git pull, затем push','Создать новый репозиторий'], answer:0, explanation:'--force-with-lease откажет, если на сервере появились чужие коммиты, которых вы не видели.' },
+{ id:'t3-5', l:'3-2', type:'order', prompt:'Порядок действий при конфликте во время merge.', options:['Открыть файл и выбрать нужный вариант','Удалить маркеры <<<<<<< ======= >>>>>>>','git add файл','git merge --continue'], explanation:'После ручного разрешения файл помечается как решённый через add.' },
+{ id:'t3-6', l:'3-2', type:'single', prompt:'Как вернуть коммиты, «потерянные» после `git reset --hard`?', options:['Найти нужный хеш в git reflog и сделать reset на него','Никак','git revert HEAD','git fetch'], answer:0, explanation:'reflog локально помнит перемещения HEAD около 90 дней.' },
+{ id:'t3-7', l:'3-3', type:'single', prompt:'Какая стратегия ветвления лучше всего сочетается с частыми деплоями?', options:['Trunk-based development с фича-флагами','GitFlow с долгоживущими ветками','Одна ветка на каждого разработчика навсегда','Без системы контроля версий'], answer:0, explanation:'Маленькие частые слияния в main сокращают время до прода.' },
+{ id:'t3-8', l:'3-3', type:'match', prompt:'Сопоставьте сообщение коммита и изменение версии 1.4.2 по SemVer.', pairs:[['fix: падение на пустом email','1.4.3'],['feat: экспорт в CSV','1.5.0'],['feat!: удалён старый эндпоинт /v1','2.0.0']], explanation:'fix → PATCH, feat → MINOR, ! (breaking change) → MAJOR.' },
+{ id:'t3-9', l:'3-3', type:'multiple', prompt:'Что не должно попадать в репозиторий?', options:['Файл .env с реальными паролями','node_modules','Исходный код','.env.example без значений'], answer:[0,1], explanation:'Секреты и устанавливаемые зависимости держат вне Git; шаблон конфигурации коммитить можно.' }
+  ]
+});
+
+MODULES.push({
+  id:4, title:'Контейнеры и Docker', short:'Как устроены контейнеры, Dockerfile, сети и тома, Compose',
+  lessons:[
+{ id:'4-1', title:'Что такое контейнер',
+html:`
+<p>Классическая проблема: «у меня работает, а на сервере нет». На сервере другая версия Node, нет нужной библиотеки, другой конфиг. Контейнер решает это: приложение едет вместе со своим окружением.</p>
+<h3>Контейнер — это процесс</h3>
+<p>Контейнер — не маленькая виртуальная машина, а обычный процесс Linux, которого ядро изолировало двумя механизмами:</p>
+<ul>
+<li><b>namespaces</b> — что процесс видит: свой список процессов (внутри он PID 1), свою сеть и IP, свою файловую систему, своё имя хоста.</li>
+<li><b>cgroups</b> — сколько процесс может потребить: лимиты CPU, памяти, ввода-вывода.</li>
+</ul>
+<div class="tbl"><table>
+<tr><th></th><th>Виртуальная машина</th><th>Контейнер</th></tr>
+<tr><td>Ядро ОС</td><td>Своё у каждой ВМ</td><td>Общее с хостом</td></tr>
+<tr><td>Старт</td><td>Десятки секунд</td><td>Доли секунды</td></tr>
+<tr><td>Размер</td><td>Гигабайты</td><td>Мегабайты</td></tr>
+<tr><td>Изоляция</td><td>Сильная (гипервизор)</td><td>Слабее: общее ядро</td></tr>
+</table></div>
+<p>Поэтому на Mac и Windows Docker Desktop запускает небольшую Linux-ВМ: Linux-контейнерам нужно Linux-ядро.</p>
+<h3>Образ и контейнер</h3>
+<ul>
+<li><b>Образ</b> — неизменяемый шаблон: файловая система из слоёв плюс метаданные (какую команду запускать, какой порт). Аналогия — класс.</li>
+<li><b>Контейнер</b> — запущенный экземпляр образа с тонким записываемым слоем сверху. Аналогия — объект. Удалили контейнер — записанное внутри пропало.</li>
+<li><b>Реестр</b> (registry) — хранилище образов: Docker Hub, GitHub Container Registry, Amazon ECR.</li>
+</ul>
+<pre>docker run -d --name web -p 8080:80 nginx:1.27   <span class="c"># скачать образ и запустить</span>
+docker ps                     <span class="c"># работающие контейнеры</span>
+docker logs -f web            <span class="c"># логи (stdout/stderr главного процесса)</span>
+docker exec -it web sh        <span class="c"># зайти внутрь</span>
+docker stop web &amp;&amp; docker rm web</pre>
+<div class="note">Формат образов и рантайма стандартизован (OCI). Образ, собранный Docker, запускают containerd в Kubernetes, Podman и любые облачные сервисы.</div>`,
+check:[
+{ id:'c4-1a', type:'match', prompt:'Сопоставьте механизм ядра и его роль.', pairs:[['namespaces','что процесс видит: PID, сеть, файловую систему'],['cgroups','сколько ресурсов процесс может потребить']], explanation:'Вместе они превращают обычный процесс в контейнер.' },
+{ id:'c4-1b', type:'single', prompt:'Чем контейнер принципиально отличается от виртуальной машины?', options:['Использует ядро хоста, а не своё','Контейнер всегда безопаснее','Контейнер нельзя остановить','ВМ не может запускать Linux'], answer:0, explanation:'Общее ядро делает контейнеры лёгкими, но изоляция у них слабее.' }
+]},
+{ id:'4-2', title:'Dockerfile и кэш слоёв',
+html:`
+<p>Образ описывается <b>Dockerfile</b>: каждая инструкция создаёт слой. Docker кэширует слои: если инструкция и всё, что в неё копируется, не изменились, слой берётся из кэша. Но как только один слой изменился, все слои выше пересобираются.</p>
+<pre>FROM node:20-alpine
+WORKDIR /app
+COPY package.json package-lock.json ./
+RUN npm ci
+COPY . .
+RUN npm run build
+EXPOSE 3000
+CMD ["node", "dist/server.js"]</pre>
+<h3>Главные инструкции</h3>
+<ul>
+<li><code>FROM</code> — базовый образ. Фиксируйте версию: <code>node:20.17-alpine</code>, а не <code>latest</code>.</li>
+<li><code>WORKDIR</code> — рабочий каталог для следующих инструкций.</li>
+<li><code>COPY</code> — скопировать файлы из контекста сборки в образ.</li>
+<li><code>RUN</code> — выполнить команду при сборке.</li>
+<li><code>ENV</code> — переменная окружения; <code>EXPOSE</code> — документирует порт (сам ничего не открывает).</li>
+<li><code>CMD</code> / <code>ENTRYPOINT</code> — что запускать при старте контейнера.</li>
+</ul>
+<h3>Порядок решает</h3>
+<p>Код меняется в каждом коммите, а зависимости — редко. Поэтому сначала копируют только файлы зависимостей и ставят их, а код — потом. Сравните:</p>
+<div data-widget="layers"></div>
+<h3>.dockerignore</h3>
+<p>Всё в каталоге сборки отправляется демону как контекст. Без <code>.dockerignore</code> туда попадут <code>node_modules</code>, <code>.git</code> и <code>.env</code> с секретами — сборка медленнее, а секреты оказываются в образе.</p>
+<pre><span class="c"># .dockerignore</span>
+node_modules
+.git
+.env
+dist
+*.log</pre>
+<pre>docker build -t orders-api:1.4.2 .
+docker image ls
+docker history orders-api:1.4.2     <span class="c"># слои и их размер</span></pre>`,
+check:[
+{ id:'c4-2a', type:'single', prompt:'Почему `COPY package.json` и `RUN npm ci` ставят до `COPY . .`?', options:['Чтобы правка кода не инвалидировала кэш установки зависимостей','Иначе npm не найдёт package.json','Так образ становится безопаснее','Docker требует этот порядок'], answer:0, explanation:'Слой с зависимостями пересобирается, только когда меняются файлы зависимостей.' },
+{ id:'c4-2b', type:'single', prompt:'Что делает инструкция EXPOSE 3000?', options:['Документирует, что приложение слушает порт 3000; публикуется порт флагом -p','Открывает порт 3000 в интернет','Запускает приложение на порту 3000','Запрещает другие порты'], answer:0, explanation:'Публикация порта наружу — это `docker run -p` или настройка в Compose/Kubernetes.' }
+]},
+{ id:'4-3', title:'Сети и данные',
+html:`
+<h3>Порты</h3>
+<p>У контейнера своя сеть. Чтобы достучаться до него с хоста, порт публикуют: <code>-p ХОСТ:КОНТЕЙНЕР</code>.</p>
+<pre>docker run -d -p 8080:3000 orders-api:1.4.2
+curl localhost:8080          <span class="c"># попадёт в порт 3000 внутри контейнера</span></pre>
+<div class="note warn"><b>Частая ошибка:</b> приложение внутри слушает <code>127.0.0.1:3000</code>. Тогда снаружи контейнера до него не достучаться, даже с <code>-p</code>. В контейнере сервер должен слушать <code>0.0.0.0</code>.</div>
+<h3>Сеть между контейнерами</h3>
+<p>Контейнеры в одной пользовательской сети находят друг друга по имени: встроенный DNS Docker превращает имя контейнера в его IP.</p>
+<pre>docker network create app-net
+docker run -d --name db --network app-net -e POSTGRES_PASSWORD=dev postgres:16
+docker run -d --name api --network app-net -e DATABASE_HOST=db orders-api:1.4.2</pre>
+<p>Внутри <code>api</code> адрес базы — <code>db:5432</code>, а не <code>localhost</code>: localhost в контейнере — это сам контейнер.</p>
+<h3>Данные</h3>
+<p>Записываемый слой контейнера исчезает вместе с ним. Всё, что нужно сохранить, выносится наружу:</p>
+<div class="cols">
+<div><b>Volume</b><code>-v pgdata:/var/lib/postgresql/data</code><br>Docker сам управляет хранилищем. Для данных баз и всего, что должно пережить контейнер.</div>
+<div><b>Bind mount</b><code>-v ./src:/app/src</code><br>Каталог хоста монтируется внутрь. Удобно в разработке для горячей перезагрузки кода.</div>
+<div><b>tmpfs</b><code>--tmpfs /tmp</code><br>Временные файлы в памяти, не пишутся на диск.</div>
+</div>
+<p>Конфигурацию передают переменными окружения (<code>-e</code>, <code>--env-file</code>) — тогда один образ работает в любом окружении. Это один из принципов <b>Twelve-Factor App</b>.</p>`,
+check:[
+{ id:'c4-3a', type:'single', prompt:'Контейнер api и контейнер db в одной docker-сети. Какой адрес базы указать в api?', options:['db:5432','localhost:5432','127.0.0.1:5432','0.0.0.0:5432'], answer:0, explanation:'Встроенный DNS Docker резолвит имя контейнера; localhost — это сам контейнер api.' },
+{ id:'c4-3b', type:'input', prompt:'Как опубликовать порт 3000 контейнера на порт 8080 хоста? Напишите флаг docker run.', answer:['-p 8080:3000','--publish 8080:3000','-p8080:3000'], explanation:'Формат: хост:контейнер.' }
+]},
+{ id:'4-4', title:'Docker Compose и хорошие образы',
+html:`
+<p>Когда контейнеров несколько, запускать их командами неудобно. <b>Docker Compose</b> описывает всё окружение в одном файле.</p>
+<pre><span class="c"># compose.yaml</span>
+services:
+  api:
+    build: .
+    ports: ["8080:3000"]
+    environment:
+      DATABASE_URL: postgres://app:dev@db:5432/orders
+    depends_on:
+      db:
+        condition: service_healthy
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: app
+      POSTGRES_PASSWORD: dev
+    volumes: [pgdata:/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "app"]
+      interval: 5s
+volumes:
+  pgdata:</pre>
+<pre>docker compose up -d --build
+docker compose logs -f api
+docker compose down          <span class="c"># остановить (тома сохранятся; -v удалит и их)</span></pre>
+<p><code>depends_on</code> без условия ждёт только <i>запуска</i> контейнера, а не готовности базы. Поэтому нужен healthcheck и <code>condition: service_healthy</code>.</p>
+<h3>Multi-stage сборка</h3>
+<p>Для сборки нужны компиляторы и dev-зависимости, для запуска — нет. Multi-stage позволяет собрать в одном образе, а в итоговый скопировать только результат:</p>
+<pre>FROM node:20-alpine AS build
+WORKDIR /app
+COPY package*.json ./
+RUN npm ci
+COPY . .
+RUN npm run build &amp;&amp; npm prune --omit=dev
+
+FROM node:20-alpine
+WORKDIR /app
+COPY --from=build /app/node_modules ./node_modules
+COPY --from=build /app/dist ./dist
+USER node
+CMD ["node", "dist/server.js"]</pre>
+<h3>Чек-лист хорошего образа</h3>
+<ul>
+<li>Конкретная версия базового образа, лучше slim/alpine/distroless.</li>
+<li>Multi-stage: в итоговом образе нет исходников и инструментов сборки.</li>
+<li><code>USER</code> — не root.</li>
+<li>Один процесс на контейнер; логи в stdout/stderr, а не в файлы.</li>
+<li>Exec-форма <code>CMD ["node", "server.js"]</code>: тогда приложение — PID 1 и получает SIGTERM. В shell-форме <code>CMD node server.js</code> сигнал получит sh.</li>
+<li>Никаких секретов в образе: их передают при запуске.</li>
+<li>Сканирование уязвимостей: <code>trivy image orders-api:1.4.2</code>.</li>
+</ul>`,
+check:[
+{ id:'c4-4a', type:'single', prompt:'Зачем нужна multi-stage сборка?', options:['Чтобы итоговый образ содержал только нужное для запуска, без инструментов сборки','Чтобы собирать несколько приложений сразу','Чтобы запускать контейнер в нескольких регионах','Чтобы ускорить скачивание базового образа'], answer:0, explanation:'Итоговый образ меньше и содержит меньше потенциальных уязвимостей.' },
+{ id:'c4-4b', type:'multiple', prompt:'Что из этого — хорошие практики для образов?', options:['Запуск не от root','Фиксированная версия базового образа','Секреты в ENV внутри Dockerfile','Логи в stdout'], answer:[0,1,3], explanation:'Значения ENV видны в метаданных образа любому, кто его скачал.' }
+]}
+  ],
+  test:[
+{ id:'t4-1', l:'4-1', type:'single', prompt:'Что будет с файлом, записанным внутрь контейнера (без томов), после `docker rm`?', options:['Он исчезнет вместе с записываемым слоем','Сохранится в образе','Перенесётся на хост','Попадёт в реестр'], answer:0, explanation:'Данные, которые должны жить дольше контейнера, хранят в томах.' },
+{ id:'t4-2', l:'4-1', type:'single', prompt:'Почему Docker Desktop на macOS запускает виртуальную машину?', options:['Linux-контейнерам нужно ядро Linux','Так быстрее','Чтобы шифровать образы','macOS не поддерживает сеть'], answer:0, explanation:'Контейнер использует ядро хоста, поэтому нужен Linux.' },
+{ id:'t4-3', l:'4-2', type:'analyze', prompt:'Каждая правка кода пересобирает npm install 2 минуты. В чём проблема?', code:'FROM node:20-alpine\nWORKDIR /app\nCOPY . .\nRUN npm install\nCMD ["node","server.js"]', options:['COPY . . стоит до установки зависимостей, поэтому кэш сбрасывается при любой правке','Нужно использовать FROM node:latest','Не хватает EXPOSE','npm install всегда медленный'], answer:0, explanation:'Скопируйте package*.json и установите зависимости до копирования кода.' },
+{ id:'t4-4', l:'4-2', type:'single', prompt:'Зачем нужен .dockerignore?', options:['Исключить из контекста сборки лишнее и секреты: node_modules, .git, .env','Игнорировать ошибки сборки','Не публиковать образ','Скрыть логи контейнера'], answer:0, explanation:'Сборка быстрее, а секреты не попадают в образ.' },
+{ id:'t4-5', l:'4-3', type:'single', prompt:'Приложение в контейнере слушает 127.0.0.1:3000, запущено с -p 8080:3000, но curl localhost:8080 не отвечает. Что исправить?', options:['Слушать 0.0.0.0 внутри контейнера','Поменять порт на 80','Добавить EXPOSE','Перезапустить Docker'], answer:0, explanation:'127.0.0.1 внутри контейнера недоступен из сети Docker.' },
+{ id:'t4-6', l:'4-3', type:'match', prompt:'Сопоставьте тип хранения и типичное применение.', pairs:[['volume','данные базы PostgreSQL'],['bind mount','исходники для горячей перезагрузки в разработке'],['tmpfs','временные файлы в памяти']], explanation:'Volume управляется Docker и переживает контейнер.' },
+{ id:'t4-7', l:'4-4', type:'single', prompt:'API падает при старте, потому что база ещё не готова, хотя есть depends_on: [db]. Что поможет?', options:['healthcheck у db и condition: service_healthy','Увеличить память контейнеру','Удалить depends_on','Поставить restart: no'], answer:0, explanation:'Простой depends_on ждёт только запуска контейнера, а не готовности сервиса.' },
+{ id:'t4-8', l:'4-4', type:'single', prompt:'Почему лучше писать `CMD ["node","server.js"]`, а не `CMD node server.js`?', options:['В exec-форме приложение становится PID 1 и получает SIGTERM напрямую','Так короче образ','Shell-форма не поддерживается','Exec-форма запускает несколько процессов'], answer:0, explanation:'В shell-форме PID 1 — это sh, который не пересылает сигналы приложению.' },
+{ id:'t4-9', l:'4-4', type:'input', prompt:'Какой командой Compose поднять все сервисы в фоне с пересборкой образов?', answer:['docker compose up -d --build','docker compose up --build -d','docker-compose up -d --build','docker-compose up --build -d'], explanation:'-d — в фоне, --build — пересобрать образы.' },
+{ id:'t4-10', l:'4-1', type:'single', prompt:'Как посмотреть логи контейнера web в реальном времени?', options:['docker logs -f web','docker exec web logs','docker inspect web','cat /var/log/web.log'], answer:0, explanation:'Docker собирает stdout и stderr главного процесса.' }
+  ]
+});
+
+// ====== КОНТЕНТ КУРСА: модули 5–6 ======
+MODULES.push({
+  id:5, title:'CI/CD', short:'Конвейеры, GitHub Actions, артефакты и секреты, стратегии деплоя',
+  lessons:[
+{ id:'5-1', title:'Непрерывная интеграция',
+html:`
+<p><b>CI (Continuous Integration)</b> — практика, при которой разработчики вливают изменения в общую ветку часто, а каждое изменение автоматически собирается и проверяется. Цель — узнать о поломке через минуты после коммита, а не через неделю на «интеграционном этапе».</p>
+<h3>Типичный конвейер</h3>
+<div class="flow"><span>checkout</span><b>→</b><span>install</span><b>→</b><span>lint</span><b>→</b><span>unit-тесты</span><b>→</b><span>build</span><b>→</b><span>интеграционные тесты</span><b>→</b><span class="hl">артефакт</span></div>
+<ul>
+<li><b>Быстрая обратная связь.</b> Конвейер на PR должен укладываться в 5–10 минут. Медленные проверки распараллеливают или выносят в ночные прогоны.</li>
+<li><b>Fail fast.</b> Дешёвые проверки (линтер, юнит-тесты) идут первыми: незачем 10 минут собирать образ, если в коде опечатка.</li>
+<li><b>Чистое окружение.</b> Каждый запуск на свежей машине или в контейнере — так находятся зависимости, которые «случайно есть» на ноутбуке.</li>
+<li><b>Красный main — приоритет.</b> Если основная ветка сломана, команда сначала чинит её.</li>
+</ul>
+<h3>Пирамида тестов</h3>
+<div class="cols">
+<div><b>Unit</b>Много, миллисекунды, без сети и базы. Основание пирамиды.</div>
+<div><b>Integration</b>Меньше: код вместе с реальной базой, очередью (часто в контейнерах).</div>
+<div><b>E2E</b>Мало: сценарий пользователя через браузер или API. Медленные и хрупкие.</div>
+</div>
+<h3>Flaky-тесты</h3>
+<p>Тест, который то проходит, то падает без изменений кода, разрушает доверие к CI: люди привыкают нажимать «перезапустить» и пропускают настоящие ошибки. Такие тесты чинят или временно выключают с задачей на исправление.</p>
+<div class="note"><b>CI, CD и CD.</b> Continuous Integration — проверка каждого изменения. <b>Continuous Delivery</b> — каждое изменение в main готово к релизу, деплой в прод по кнопке. <b>Continuous Deployment</b> — в прод уходит автоматически всё, что прошло конвейер.</div>`,
+check:[
+{ id:'c5-1a', type:'single', prompt:'Чем Continuous Delivery отличается от Continuous Deployment?', options:['В Delivery выкладка в прод по решению человека, в Deployment — автоматически','Это одно и то же','Delivery — только для мобильных приложений','Deployment не требует тестов'], answer:0, explanation:'В обоих случаях артефакт всегда готов, разница — в последнем шаге.' },
+{ id:'c5-1b', type:'single', prompt:'Почему линтер и юнит-тесты ставят в начало конвейера?', options:['Они быстрые и дешёвые: ошибки находятся раньше, чем запустятся долгие шаги','Так требует GitHub','Они самые важные','Иначе сборка не начнётся'], answer:0, explanation:'Принцип fail fast экономит время и ресурсы.' }
+]},
+{ id:'5-2', title:'GitHub Actions на практике',
+html:`
+<p>GitHub Actions — встроенный в GitHub CI. Конвейер описывается YAML-файлом в <code>.github/workflows/</code>. Похожим образом устроены GitLab CI (<code>.gitlab-ci.yml</code>) и другие системы.</p>
+<pre><span class="c"># .github/workflows/ci.yml</span>
+name: CI
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node: [18, 20]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: \${{ matrix.node }}
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      - run: npm test
+
+  image:
+    needs: test
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: \${{ github.actor }}
+          password: \${{ secrets.GITHUB_TOKEN }}
+      - run: |
+          docker build -t ghcr.io/acme/orders-api:\${{ github.sha }} .
+          docker push ghcr.io/acme/orders-api:\${{ github.sha }}</pre>
+<h3>Словарь</h3>
+<ul>
+<li><b>on</b> — события-триггеры: push, pull_request, тег, расписание (<code>schedule</code> с cron), ручной запуск (<code>workflow_dispatch</code>).</li>
+<li><b>job</b> — набор шагов на одной машине (раннере). Джобы по умолчанию идут параллельно; <code>needs</code> задаёт зависимость.</li>
+<li><b>step</b> — команда (<code>run</code>) или готовое действие (<code>uses</code>).</li>
+<li><b>matrix</b> — запустить джобу для нескольких комбинаций параметров.</li>
+<li><b>runner</b> — машина, на которой выполняется джоба: облачная от GitHub или своя (self-hosted).</li>
+</ul>
+<h3>Скорость</h3>
+<ul>
+<li>Кэш зависимостей (<code>cache: npm</code>, <code>actions/cache</code>) экономит минуты на каждом запуске.</li>
+<li>Кэш слоёв Docker в CI: <code>docker/build-push-action</code> с <code>cache-from: type=gha</code>.</li>
+<li>Фиксируйте версии действий (<code>@v4</code>, а для чувствительных — полный SHA): чужое действие выполняется с доступом к вашему коду и токенам.</li>
+</ul>`,
+check:[
+{ id:'c5-2a', type:'single', prompt:'Как сделать так, чтобы джоба deploy запускалась только после успешной джобы test?', options:['needs: test','depends: test','after: test','Поставить её ниже в файле'], answer:0, explanation:'Без needs джобы выполняются параллельно.' },
+{ id:'c5-2b', type:'input', prompt:'В каком каталоге репозитория лежат файлы workflow GitHub Actions?', answer:['.github/workflows','.github/workflows/'], explanation:'Каждый YAML-файл там — отдельный workflow.' }
+]},
+{ id:'5-3', title:'Артефакты, окружения и секреты',
+html:`
+<h3>Собери один раз — разворачивай везде</h3>
+<p>Артефакт собирают <b>один раз</b> и один и тот же образ продвигают по окружениям: staging → production. Если пересобирать для прода отдельно, в прод может уехать не то, что тестировали (обновилась зависимость, изменился базовый образ).</p>
+<div class="flow"><span>commit 3f9c2ab</span><b>→</b><span class="hl">app:3f9c2ab</span><b>→</b><span>staging</span><b>→</b><span>production</span></div>
+<p>Отличия окружений — только в конфигурации: переменные окружения, адреса, секреты. Образ одинаковый.</p>
+<h3>Теги образов</h3>
+<ul>
+<li><code>app:3f9c2ab</code> — неизменяемый тег по коммиту. Его и деплоят.</li>
+<li><code>app:1.4.2</code> — версия релиза, удобна людям.</li>
+<li><code>app:latest</code> — плавающий тег: сегодня одно, завтра другое. В манифестах прода не используйте — неясно, что работает, и откат невозможен.</li>
+</ul>
+<h3>Окружения и защита</h3>
+<p>В GitHub Actions есть <b>environments</b>: у окружения production могут быть обязательные ревьюеры, ограничение по веткам и свои секреты. Деплой ждёт нажатия «Approve».</p>
+<pre>  deploy-prod:
+    needs: deploy-staging
+    environment: production     <span class="c"># ждёт одобрения, берёт секреты окружения</span>
+    runs-on: ubuntu-latest</pre>
+<h3>Секреты</h3>
+<ul>
+<li>Храните в хранилище секретов CI (GitHub Secrets) или во внешнем — HashiCorp Vault, AWS Secrets Manager. Никогда в репозитории.</li>
+<li>CI маскирует секреты в логах, но <code>echo $TOKEN | base64</code> маску обойдёт. Не выводите секреты вообще.</li>
+<li>Принцип минимальных прав: токен для деплоя в staging не должен уметь трогать прод.</li>
+<li>Вместо долгоживущих ключей облака используйте <b>OIDC</b>: CI получает у облака короткоживущий токен, доверие настраивается по репозиторию и ветке.</li>
+<li>Пулл-реквесты из форков не получают секреты — иначе любой мог бы их украсть, изменив workflow.</li>
+</ul>`,
+check:[
+{ id:'c5-3a', type:'single', prompt:'Почему в прод деплоят тот же образ, что тестировали на staging, а не пересобирают его?', options:['Пересборка может дать другой результат: новые версии зависимостей или базового образа','Пересборка запрещена Docker','Так дешевле хранить образы','Staging и прод используют разные языки'], answer:0, explanation:'Принцип build once, deploy many гарантирует, что в проде проверенный артефакт.' },
+{ id:'c5-3b', type:'single', prompt:'Чем плох тег latest в манифестах продакшена?', options:['Непонятно, какая версия запущена, и нельзя надёжно откатиться','Он медленнее скачивается','Kubernetes его не поддерживает','Он занимает больше места'], answer:0, explanation:'Плавающий тег указывает на разные образы в разное время.' }
+]},
+{ id:'5-4', title:'Стратегии деплоя',
+html:`
+<p>Как заменить работающую версию новой так, чтобы пользователи не заметили, а при проблеме можно было быстро вернуться назад? Сравните четыре стратегии по шагам:</p>
+<div data-widget="rollout"></div>
+<div class="tbl"><table>
+<tr><th>Стратегия</th><th>Простой</th><th>Доп. ресурсы</th><th>Откат</th><th>Риск</th></tr>
+<tr><td>Recreate</td><td>Есть</td><td>Нет</td><td>Повторный деплой</td><td>Все пользователи сразу</td></tr>
+<tr><td>Rolling</td><td>Нет</td><td>Немного (surge)</td><td>Обратная раскатка</td><td>Растёт постепенно</td></tr>
+<tr><td>Blue-green</td><td>Нет</td><td>×2 на время деплоя</td><td>Мгновенный</td><td>Все сразу, но откат быстрый</td></tr>
+<tr><td>Canary</td><td>Нет</td><td>Немного</td><td>Быстрый</td><td>Малая доля пользователей</td></tr>
+</table></div>
+<h3>Фича-флаги</h3>
+<p>Флаг — условие в коде: <code>if (flags.newCheckout) {…}</code>. Код деплоится выключенным, а включается в панели: сначала для сотрудников, потом для 10% пользователей, потом для всех. Выключить флаг быстрее любого отката. Старые флаги нужно удалять, иначе код обрастает ветвлениями.</p>
+<h3>Миграции базы данных</h3>
+<p>При rolling и canary две версии работают одновременно с одной базой. Поэтому схему меняют в несколько шагов (<b>expand/contract</b>):</p>
+<ol>
+<li>Добавить новую колонку, старая остаётся (обе версии кода работают).</li>
+<li>Задеплоить код, который пишет в обе и читает новую.</li>
+<li>Перенести данные.</li>
+<li>Следующим релизом удалить старую колонку.</li>
+</ol>
+<div class="note"><b>Откат должен быть отрепетирован.</b> Если вы ни разу не откатывались, в момент инцидента окажется, что миграция необратима или старый образ удалён из реестра.</div>`,
+check:[
+{ id:'c5-4a', type:'match', prompt:'Сопоставьте стратегию и её особенность.', pairs:[['Recreate','есть простой между версиями'],['Blue-green','два полных окружения и мгновенное переключение'],['Canary','сначала небольшая доля трафика на новую версию'],['Rolling','поды заменяются по одному']], explanation:'Выбор зависит от допустимого риска, ресурсов и совместимости версий.' },
+{ id:'c5-4b', type:'single', prompt:'Почему при rolling update миграцию «переименовать колонку» делают в несколько релизов?', options:['Старая и новая версии кода работают одновременно с одной базой','Базы не умеют переименовывать колонки','Так быстрее','Чтобы не делать бэкап'], answer:0, explanation:'Схема должна быть совместима с обеими версиями во время раскатки.' }
+]}
+  ],
+  test:[
+{ id:'t5-1', l:'5-1', type:'single', prompt:'Тест иногда падает без изменений в коде. Что с ним делать?', options:['Починить или временно отключить с задачей на исправление','Перезапускать пайплайн, пока не пройдёт','Игнорировать','Удалить все тесты'], answer:0, explanation:'Flaky-тесты приучают игнорировать красный CI.' },
+{ id:'t5-2', l:'5-1', type:'single', prompt:'Каких тестов в пирамиде должно быть больше всего?', options:['Юнит-тестов','E2E-тестов','Ручных тестов','Нагрузочных тестов'], answer:0, explanation:'Юнит-тесты быстрые и стабильные, E2E — медленные и хрупкие.' },
+{ id:'t5-3', l:'5-2', type:'analyze', prompt:'Почему джоба deploy стартует одновременно с test?', code:'jobs:\n  test:\n    runs-on: ubuntu-latest\n    steps: [...]\n  deploy:\n    runs-on: ubuntu-latest\n    steps: [...]', options:['У deploy нет needs: test, а джобы по умолчанию параллельны','Ошибка в runs-on','Нужно поменять порядок джоб в файле','GitHub Actions всегда так работает'], answer:0, explanation:'Зависимости между джобами задаются только через needs.' },
+{ id:'t5-4', l:'5-2', type:'single', prompt:'Что даёт strategy.matrix?', options:['Запуск джобы для нескольких комбинаций параметров, например версий Node','Шифрование секретов','Кэширование зависимостей','Запуск по расписанию'], answer:0, explanation:'Например, node: [18, 20] даст две параллельные джобы.' },
+{ id:'t5-5', l:'5-2', type:'input', prompt:'Какой триггер позволяет запускать workflow вручную кнопкой в интерфейсе GitHub?', answer:['workflow_dispatch'], explanation:'Можно также объявить входные параметры для ручного запуска.' },
+{ id:'t5-6', l:'5-3', type:'single', prompt:'Что использовать вместо долгоживущих ключей облака в CI?', options:['OIDC: CI получает короткоживущий токен у облака','Ключ в README','Ключ в переменной Dockerfile','Пароль root'], answer:0, explanation:'Короткоживущие токены не нужно хранить и ротировать вручную.' },
+{ id:'t5-7', l:'5-3', type:'multiple', prompt:'Какие практики работы с секретами в CI правильные?', options:['Хранить в секретах CI или Vault','Разные токены для staging и prod','Выводить токен в лог для отладки','Коммитить .env в репозиторий'], answer:[0,1], explanation:'Секреты не должны появляться ни в логах, ни в Git.' },
+{ id:'t5-8', l:'5-4', type:'single', prompt:'Какая стратегия даёт мгновенный откат ценой двойных ресурсов во время деплоя?', options:['Blue-green','Recreate','Rolling','Canary'], answer:0, explanation:'Старое окружение остаётся работать, назад переключается только трафик.' },
+{ id:'t5-9', l:'5-4', type:'single', prompt:'Новая версия задеплоена, но новая функция ещё не должна быть видна пользователям. Что использовать?', options:['Фича-флаг','Отдельный репозиторий','Тег latest','Recreate-деплой'], answer:0, explanation:'Флаги разделяют деплой и релиз.' },
+{ id:'t5-10', l:'5-4', type:'order', prompt:'Расставьте шаги безопасного переименования колонки при деплое без простоя.', options:['Добавить новую колонку','Задеплоить код, который пишет в обе колонки и читает новую','Перенести данные из старой колонки','Удалить старую колонку следующим релизом'], explanation:'Паттерн expand/contract.' }
+  ]
+});
+
+MODULES.push({
+  id:6, title:'Kubernetes', short:'Архитектура, Deployment, Service и Ingress, пробы и отладка',
+  lessons:[
+{ id:'6-1', title:'Зачем нужен оркестратор',
+html:`
+<p>Docker запускает контейнеры на одной машине. Но у вас 20 сервисов по нескольку копий, 10 серверов, и один из них только что умер. Кто перезапустит контейнеры на других машинах, распределит нагрузку и выкатит новую версию без простоя? Это делает <b>оркестратор</b>. Стандарт индустрии — <b>Kubernetes</b> (k8s).</p>
+<h3>Декларативная модель</h3>
+<p>Вы не говорите «запусти контейнер». Вы описываете <b>желаемое состояние</b>: «должно работать 3 копии образа <code>orders-api:3f9c2ab</code>». Контроллеры Kubernetes в бесконечном цикле сравнивают желаемое с фактическим и устраняют разницу. Упала нода — подов стало 2 — контроллер создаёт третий на другой ноде.</p>
+<div class="flow"><span>желаемое состояние</span><b>→</b><span class="hl">контроллер сравнивает</span><b>→</b><span>действие</span><b>→</b><span>фактическое состояние</span><b>↺</b></div>
+<h3>Из чего состоит кластер</h3>
+<div class="cols">
+<div><b>Control plane</b>
+<code>kube-apiserver</code> — единственная точка входа, все общаются через него.<br>
+<code>etcd</code> — хранилище всего состояния кластера.<br>
+<code>scheduler</code> — выбирает, на какую ноду поставить под.<br>
+<code>controller-manager</code> — циклы контроллеров.</div>
+<div><b>Рабочие ноды</b>
+<code>kubelet</code> — агент: запускает поды, назначенные ноде, и докладывает их статус.<br>
+<code>container runtime</code> — containerd, собственно запускает контейнеры.<br>
+<code>kube-proxy</code> — правила сети для Service.</div>
+</div>
+<h3>kubectl</h3>
+<pre>kubectl get nodes
+kubectl get pods -n shop -o wide
+kubectl apply -f deployment.yaml     <span class="c"># привести кластер к описанию из файла</span>
+kubectl describe pod orders-api-7d9f-x2k
+kubectl explain deployment.spec       <span class="c"># документация по полям</span></pre>
+<p>Ресурсы группируются в <b>namespace</b> — логические разделы кластера (например, по командам или окружениям).</p>
+<div class="note">Управляемые кластеры (EKS, GKE, AKS, Yandex Managed Kubernetes) берут control plane на себя. Для учёбы локально подойдут kind, minikube или k3d.</div>`,
+check:[
+{ id:'c6-1a', type:'match', prompt:'Сопоставьте компонент и его роль.', pairs:[['etcd','хранит состояние кластера'],['scheduler','выбирает ноду для пода'],['kubelet','запускает поды на ноде'],['kube-apiserver','точка входа для всех запросов']], explanation:'Все компоненты общаются друг с другом через API-сервер.' },
+{ id:'c6-1b', type:'single', prompt:'Что значит «декларативная модель» в Kubernetes?', options:['Вы описываете желаемое состояние, а контроллеры приводят к нему кластер','Вы пишете скрипт с последовательностью команд','Kubernetes выполняет команды только один раз','Состояние хранится только в YAML-файлах у разработчика'], answer:0, explanation:'Контроллеры постоянно сверяют фактическое состояние с желаемым.' }
+]},
+{ id:'6-2', title:'Pod, ReplicaSet, Deployment',
+html:`
+<ul>
+<li><b>Pod</b> — минимальная единица: один или несколько контейнеров с общим IP и томами. Поды смертны: при падении ноды под не «переезжает», вместо него создаётся новый, с новым IP.</li>
+<li><b>ReplicaSet</b> — поддерживает заданное число одинаковых подов.</li>
+<li><b>Deployment</b> — управляет ReplicaSet-ами и умеет обновлять версии: rolling update и откат. Именно его вы описываете для stateless-сервиса.</li>
+</ul>
+<pre>apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: orders-api
+  namespace: shop
+spec:
+  replicas: 3
+  selector:
+    matchLabels: { app: orders-api }
+  strategy:
+    rollingUpdate: { maxSurge: 1, maxUnavailable: 0 }
+  template:
+    metadata:
+      labels: { app: orders-api }
+    spec:
+      containers:
+        - name: api
+          image: ghcr.io/acme/orders-api:3f9c2ab
+          ports: [{ containerPort: 3000 }]</pre>
+<h3>Метки и селекторы</h3>
+<p>Связи в Kubernetes строятся не по именам, а по <b>меткам</b> (labels). Deployment управляет всеми подами с меткой <code>app: orders-api</code>; Service отправляет трафик на поды с этой же меткой. Метка в <code>selector</code> и в <code>template</code> должна совпадать.</p>
+<h3>Обновление и откат</h3>
+<pre>kubectl set image deploy/orders-api api=ghcr.io/acme/orders-api:9e1d07c -n shop
+kubectl rollout status deploy/orders-api -n shop
+kubectl rollout history deploy/orders-api -n shop
+kubectl rollout undo deploy/orders-api -n shop     <span class="c"># вернуть предыдущую версию</span>
+kubectl scale deploy/orders-api --replicas=5 -n shop</pre>
+<p>В реальной жизни правят не командой, а YAML в Git, и CI или GitOps-инструмент (Argo CD, Flux) применяет его. Ручные <code>kubectl edit</code> в проде расходятся с репозиторием.</p>
+<div class="note">Для баз данных и других сервисов с состоянием есть <b>StatefulSet</b> (стабильные имена и свои тома), для агента на каждой ноде — <b>DaemonSet</b>, для разовых задач — <b>Job</b> и <b>CronJob</b>.</div>`,
+check:[
+{ id:'c6-2a', type:'single', prompt:'Под с приложением упал вместе с нодой. Что произойдёт, если он создан Deployment-ом?', options:['ReplicaSet создаст новый под на другой ноде, с новым IP','Под переедет со старым IP','Ничего, нужно создать вручную','Kubernetes перезагрузит ноду'], answer:0, explanation:'Поды не переносятся, они пересоздаются.' },
+{ id:'c6-2b', type:'input', prompt:'Какой командой откатить Deployment orders-api на предыдущую версию? (kubectl …)', answer:['kubectl rollout undo deploy/orders-api','kubectl rollout undo deployment/orders-api','kubectl rollout undo deployment orders-api','kubectl rollout undo deploy orders-api'], explanation:'Можно указать конкретную ревизию флагом --to-revision.' }
+]},
+{ id:'6-3', title:'Service, Ingress, ConfigMap и Secret',
+html:`
+<h3>Service: постоянный адрес для смертных подов</h3>
+<p>IP подов меняются при каждом пересоздании. <b>Service</b> даёт стабильное имя и IP и балансирует трафик между подами с подходящими метками — и только между <i>готовыми</i>.</p>
+<pre>apiVersion: v1
+kind: Service
+metadata: { name: orders-api, namespace: shop }
+spec:
+  selector: { app: orders-api }
+  ports: [{ port: 80, targetPort: 3000 }]</pre>
+<p>Другие сервисы обращаются к нему по DNS: <code>http://orders-api</code> внутри namespace или <code>orders-api.shop.svc.cluster.local</code> из любого.</p>
+<div class="tbl"><table>
+<tr><th>Тип</th><th>Доступен</th></tr>
+<tr><td>ClusterIP</td><td>Только внутри кластера (по умолчанию)</td></tr>
+<tr><td>NodePort</td><td>На порту 30000–32767 каждой ноды</td></tr>
+<tr><td>LoadBalancer</td><td>Через облачный балансировщик с внешним IP</td></tr>
+</table></div>
+<h3>Ingress: HTTP снаружи</h3>
+<p>Чтобы не заводить балансировщик на каждый сервис, ставят один <b>Ingress-контроллер</b> (ingress-nginx, Traefik), а правила маршрутизации описывают ресурсом Ingress (новый стандарт — Gateway API):</p>
+<pre>apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata: { name: shop, namespace: shop }
+spec:
+  tls: [{ hosts: [shop.example.com], secretName: shop-tls }]
+  rules:
+    - host: shop.example.com
+      http:
+        paths:
+          - path: /api/orders
+            pathType: Prefix
+            backend: { service: { name: orders-api, port: { number: 80 } } }</pre>
+<h3>Конфигурация</h3>
+<pre>kubectl create configmap orders-config --from-literal=LOG_LEVEL=info -n shop
+kubectl create secret generic orders-db --from-literal=DATABASE_URL='postgres://…' -n shop</pre>
+<pre>          envFrom:
+            - configMapRef: { name: orders-config }
+            - secretRef: { name: orders-db }</pre>
+<div class="note warn"><b>Secret — не шифрование.</b> Значения хранятся в base64, его декодирует кто угодно с доступом на чтение. Защищайте доступ через RBAC, включайте шифрование etcd, а сами секреты держите во внешнем хранилище (External Secrets, Sealed Secrets, Vault).</div>`,
+check:[
+{ id:'c6-3a', type:'single', prompt:'Зачем нужен Service, если у каждого пода есть IP?', options:['IP подов меняются при пересоздании; Service даёт стабильный адрес и балансировку','Без Service поды не запускаются','Service шифрует трафик','Service хранит логи'], answer:0, explanation:'Service находит поды по меткам и направляет трафик только на готовые.' },
+{ id:'c6-3b', type:'single', prompt:'Насколько защищены данные в Kubernetes Secret по умолчанию?', options:['Они в base64 — это кодирование, не шифрование','Зашифрованы AES-256 без настроек','Их невозможно прочитать','Хранятся только в памяти'], answer:0, explanation:'Безопасность Secret обеспечивают RBAC, шифрование etcd и внешние хранилища.' }
+]},
+{ id:'6-4', title:'Пробы, ресурсы и отладка',
+html:`
+<h3>Пробы</h3>
+<pre>          readinessProbe:
+            httpGet: { path: /ready, port: 3000 }
+            periodSeconds: 5
+          livenessProbe:
+            httpGet: { path: /health, port: 3000 }
+            initialDelaySeconds: 10
+            failureThreshold: 3</pre>
+<ul>
+<li><b>readiness</b> — готов ли под принимать трафик. Не готов — Service временно не шлёт на него запросы. Важна при деплое и прогреве.</li>
+<li><b>liveness</b> — жив ли процесс. Провал — kubelet перезапускает контейнер. Не проверяйте в ней базу: при падении базы перезапустятся все поды, и станет хуже.</li>
+<li><b>startup</b> — для медленно стартующих приложений: пока не пройдёт, liveness не проверяется.</li>
+</ul>
+<h3>Ресурсы</h3>
+<pre>          resources:
+            requests: { cpu: 250m, memory: 256Mi }
+            limits:   { memory: 512Mi }</pre>
+<p><b>requests</b> — сколько гарантировано, по ним scheduler выбирает ноду. <b>limits</b> — потолок: превысил память — контейнер убит (OOMKilled), превысил CPU — притормаживается (throttling). <code>250m</code> — четверть ядра. <b>HorizontalPodAutoscaler</b> меняет число реплик по загрузке CPU или своим метрикам.</p>
+<h3>Частые статусы и что делать</h3>
+<div class="tbl"><table>
+<tr><th>Статус</th><th>Что значит</th><th>Куда смотреть</th></tr>
+<tr><td>Pending</td><td>Под не может разместиться: не хватает ресурсов, нет подходящей ноды</td><td><code>kubectl describe pod</code> → Events</td></tr>
+<tr><td>ImagePullBackOff</td><td>Не удаётся скачать образ: опечатка в теге, нет доступа к реестру</td><td>Events, имя образа, imagePullSecrets</td></tr>
+<tr><td>CrashLoopBackOff</td><td>Контейнер стартует и падает, k8s перезапускает с растущей паузой</td><td><code>kubectl logs pod --previous</code></td></tr>
+<tr><td>OOMKilled</td><td>Превышен лимит памяти</td><td>describe → Last State, поднять limit или искать утечку</td></tr>
+<tr><td>Running, 0/1 Ready</td><td>Не проходит readiness</td><td>describe → Events, эндпоинт пробы</td></tr>
+</table></div>
+<pre>kubectl get pods -n shop
+kubectl describe pod orders-api-7d9f-x2k -n shop
+kubectl logs orders-api-7d9f-x2k -n shop --previous
+kubectl exec -it orders-api-7d9f-x2k -n shop -- sh
+kubectl get events -n shop --sort-by=.lastTimestamp
+kubectl port-forward svc/orders-api 8080:80 -n shop</pre>`,
+check:[
+{ id:'c6-4a', type:'single', prompt:'Под в статусе CrashLoopBackOff. Какая команда покажет, почему упал контейнер?', options:['kubectl logs <pod> --previous','kubectl get nodes','kubectl scale','kubectl rollout status'], answer:0, explanation:'--previous показывает лог предыдущего, упавшего запуска контейнера.' },
+{ id:'c6-4b', type:'single', prompt:'Что происходит, когда не проходит readinessProbe?', options:['Под исключается из балансировки Service, но не перезапускается','Контейнер перезапускается','Под удаляется','Нода перезагружается'], answer:0, explanation:'Перезапуск — реакция на провал liveness, а не readiness.' }
+]}
+  ],
+  test:[
+{ id:'t6-1', l:'6-1', type:'single', prompt:'Где хранится всё состояние кластера Kubernetes?', options:['В etcd','В kubelet','На диске каждого пода','В Docker Hub'], answer:0, explanation:'Бэкап etcd — это бэкап кластера.' },
+{ id:'t6-2', l:'6-1', type:'single', prompt:'Что делает `kubectl apply -f deployment.yaml`?', options:['Приводит объекты в кластере к описанию из файла (создаёт или обновляет)','Только проверяет синтаксис','Удаляет объекты','Скачивает YAML из кластера'], answer:0, explanation:'Это декларативное управление: файл — источник истины.' },
+{ id:'t6-3', l:'6-2', type:'analyze', prompt:'Deployment не создаёт подов, apply выдаёт ошибку. Что не так?', code:'spec:\n  selector:\n    matchLabels: { app: orders }\n  template:\n    metadata:\n      labels: { app: orders-api }', options:['Метка в selector не совпадает с меткой в template','Не указан namespace','Нет поля replicas','Нужен тип Service'], answer:0, explanation:'Deployment должен «узнавать» свои поды по меткам из шаблона.' },
+{ id:'t6-4', l:'6-2', type:'single', prompt:'Какой объект подходит для базы данных с собственными постоянными томами?', options:['StatefulSet','Deployment','DaemonSet','Job'], answer:0, explanation:'StatefulSet даёт подам стабильные имена и свои PersistentVolume.' },
+{ id:'t6-5', l:'6-2', type:'single', prompt:'Почему ручные `kubectl edit` в проде считаются плохой практикой?', options:['Состояние кластера расходится с описанием в Git, изменения теряются при следующем деплое','kubectl edit медленный','Это запрещено Kubernetes','Он удаляет поды'], answer:0, explanation:'Источником истины должен быть репозиторий (GitOps).' },
+{ id:'t6-6', l:'6-3', type:'input', prompt:'Сервис orders-api в namespace shop. Какое полное DNS-имя у него внутри кластера?', answer:['orders-api.shop.svc.cluster.local'], explanation:'Формат: имя.namespace.svc.cluster.local.' },
+{ id:'t6-7', l:'6-3', type:'match', prompt:'Сопоставьте тип Service и доступность.', pairs:[['ClusterIP','только внутри кластера'],['NodePort','порт на каждой ноде'],['LoadBalancer','внешний IP облачного балансировщика']], explanation:'Для HTTP-трафика снаружи обычно используют Ingress поверх ClusterIP.' },
+{ id:'t6-8', l:'6-4', type:'single', prompt:'Почему в livenessProbe не стоит проверять доступность базы данных?', options:['При сбое базы перезапустятся все поды, что только усугубит ситуацию','Liveness не умеет HTTP','База обидится','Так требует etcd'], answer:0, explanation:'Liveness должна проверять только сам процесс. Зависимости — дело readiness, и то с осторожностью.' },
+{ id:'t6-9', l:'6-4', type:'match', prompt:'Сопоставьте статус пода и вероятную причину.', pairs:[['ImagePullBackOff','опечатка в теге образа'],['Pending','не хватает ресурсов на нодах'],['OOMKilled','превышен лимит памяти'],['CrashLoopBackOff','приложение падает при старте']], explanation:'Подробности почти всегда в `kubectl describe pod` и логах.' },
+{ id:'t6-10', l:'6-4', type:'single', prompt:'Что означает `cpu: 250m` в requests?', options:['Четверть ядра CPU','250 мегагерц','250 МБ памяти','250 миллисекунд таймаута'], answer:0, explanation:'1000m = одно ядро.' }
+  ]
+});
+
+// ====== БУДУЩИЕ МОДУЛИ, ГЛОССАРИЙ, ШПАРГАЛКИ ======
+const UPCOMING = [
+  { id:7, title:'Инфраструктура как код', short:'Terraform, Ansible, состояние и модули', plan:'Terraform: провайдеры, state, plan/apply; модули и окружения; Ansible и идемпотентность; GitOps' },
+  { id:8, title:'Облака', short:'IAM, VPC, вычисления, хранилища, стоимость', plan:'модель ответственности; IAM и роли; VPC и подсети; виртуальные машины и managed-сервисы; объектные хранилища; контроль затрат' },
+  { id:9, title:'Наблюдаемость', short:'Метрики, логи, трейсы, алерты', plan:'Prometheus и PromQL; Grafana; структурные логи и Loki; трейсинг и OpenTelemetry; алерты без шума' },
+  { id:10, title:'DevSecOps', short:'Секреты, сканирование, supply chain', plan:'управление секретами; SAST и сканирование зависимостей; подпись образов; политики в кластере; минимальные права' },
+  { id:11, title:'SRE и инциденты', short:'SLI/SLO, бюджет ошибок, разборы', plan:'SLI, SLO и бюджет ошибок; дежурства и эскалации; ведение инцидента; постмортемы без поиска виноватых; capacity planning' },
+  { id:12, title:'Финальный проект', short:'Сервис от репозитория до кластера', plan:'Dockerfile, CI в GitHub Actions, деплой в kind-кластер, мониторинг и алерт, отработка отката' }
+];
+
+const GLOSSARY = [
+  ['Артефакт','Результат сборки, который разворачивают в окружениях: образ, бинарник, архив.','0-1'],
+  ['Пайплайн','Автоматическая последовательность шагов от коммита до деплоя.','0-1'],
+  ['Окружение','Отдельная копия системы: dev, staging, production.','0-1'],
+  ['Фича-флаг','Переключатель в коде, позволяющий включать функцию без нового деплоя.','5-4'],
+  ['CALMS','Модель DevOps: Culture, Automation, Lean, Measurement, Sharing.','0-2'],
+  ['SRE','Site Reliability Engineering: подход к эксплуатации как к инженерной задаче, с SLO и бюджетом ошибок.','0-2'],
+  ['DORA','Исследовательская программа и четыре метрики эффективности доставки ПО.','0-3'],
+  ['Lead time for changes','Время от коммита до работы изменения в проде.','0-3'],
+  ['PID','Идентификатор процесса в Linux.','1-2'],
+  ['SIGTERM','Сигнал вежливого завершения процесса (15). Его шлют Docker и Kubernetes при остановке.','1-2'],
+  ['SIGKILL','Сигнал немедленного уничтожения процесса (9), не перехватывается.','1-2'],
+  ['OOM killer','Механизм ядра, убивающий процесс при нехватке памяти.','1-4'],
+  ['systemd','Система инициализации Linux, запускает и следит за сервисами.','1-3'],
+  ['Unit','Описание сервиса или другого объекта для systemd.','1-3'],
+  ['Load average','Среднее число процессов, работающих или ждущих CPU, за 1, 5 и 15 минут.','1-4'],
+  ['inode','Запись файловой системы о файле. Их число ограничено.','1-4'],
+  ['stdout / stderr','Стандартные потоки вывода и ошибок процесса (1 и 2).','2-1'],
+  ['Пайп','Оператор `|`: передаёт вывод одной команды на вход другой.','2-1'],
+  ['Шебанг','Первая строка скрипта `#!`, указывающая интерпретатор.','2-2'],
+  ['cron','Планировщик задач по расписанию из пяти полей.','2-3'],
+  ['Бастион','Сервер-шлюз, через который заходят по SSH во внутреннюю сеть.','2-3'],
+  ['Коммит','Неизменяемый снимок проекта с автором, сообщением и ссылкой на родителя.','3-1'],
+  ['HEAD','Указатель на текущее положение в истории Git.','3-1'],
+  ['Rebase','Перенос коммитов поверх другой ветки с созданием новых коммитов.','3-2'],
+  ['Revert','Новый коммит, отменяющий изменения указанного коммита.','3-2'],
+  ['Trunk-based development','Стратегия, при которой все часто вливают маленькие изменения в main.','3-3'],
+  ['SemVer','Семантическое версионирование MAJOR.MINOR.PATCH.','3-3'],
+  ['Контейнер','Изолированный процесс Linux с собственной файловой системой из образа.','4-1'],
+  ['Образ','Неизменяемый шаблон контейнера из слоёв.','4-1'],
+  ['namespaces','Механизм ядра, ограничивающий, что видит процесс.','4-1'],
+  ['cgroups','Механизм ядра, ограничивающий ресурсы процесса.','4-1'],
+  ['Реестр','Хранилище образов: Docker Hub, GHCR, ECR.','4-1'],
+  ['Слой','Часть образа, созданная одной инструкцией Dockerfile; кэшируется.','4-2'],
+  ['Volume','Хранилище Docker, переживающее удаление контейнера.','4-3'],
+  ['Multi-stage build','Сборка образа в несколько этапов, итоговый содержит только нужное для запуска.','4-4'],
+  ['Docker Compose','Описание многоконтейнерного окружения в одном YAML-файле.','4-4'],
+  ['CI','Continuous Integration: частое слияние изменений с автоматической проверкой.','5-1'],
+  ['Continuous Delivery','Каждое изменение готово к релизу, деплой в прод по кнопке.','5-1'],
+  ['Flaky-тест','Тест, который нестабильно проходит без изменений кода.','5-1'],
+  ['Runner','Машина, на которой выполняются джобы CI.','5-2'],
+  ['OIDC','Способ получить в CI короткоживущий токен облака без хранения ключей.','5-3'],
+  ['Blue-green','Деплой с двумя окружениями и мгновенным переключением трафика.','5-4'],
+  ['Canary','Деплой с постепенным переводом доли трафика на новую версию.','5-4'],
+  ['Rolling update','Постепенная замена подов старой версии новыми.','5-4'],
+  ['Pod','Минимальная единица Kubernetes: контейнеры с общей сетью и томами.','6-2'],
+  ['Deployment','Объект Kubernetes для stateless-приложений с обновлениями и откатом.','6-2'],
+  ['Label','Метка-пара ключ/значение, по которой объекты Kubernetes связываются.','6-2'],
+  ['Service','Стабильный адрес и балансировщик для набора подов.','6-3'],
+  ['Ingress','Правила маршрутизации HTTP-трафика снаружи в Service.','6-3'],
+  ['ConfigMap','Объект Kubernetes с несекретной конфигурацией.','6-3'],
+  ['etcd','Распределённое хранилище состояния кластера Kubernetes.','6-1'],
+  ['kubelet','Агент на ноде, запускающий поды.','6-1'],
+  ['readinessProbe','Проверка готовности пода принимать трафик.','6-4'],
+  ['livenessProbe','Проверка, жив ли контейнер; провал ведёт к перезапуску.','6-4'],
+  ['CrashLoopBackOff','Статус пода, контейнер которого постоянно падает при старте.','6-4'],
+  ['HPA','HorizontalPodAutoscaler: меняет число реплик по нагрузке.','6-4']
+];
+
+const CHEATS = [
+  { title:'Linux: диагностика', rows:[
+    ['uptime','Время работы и load average'],['top / htop','Процессы по CPU и памяти'],['free -h','Память (смотрите available)'],
+    ['df -h / df -i','Место и inode на дисках'],['du -sh * | sort -h','Что занимает место'],['ss -tlnp','Слушающие порты и процессы'],
+    ['journalctl -u svc -f','Лог сервиса systemd'],['systemctl status svc','Состояние сервиса'],['dmesg | grep -i oom','Следы OOM killer'],['lsof -i :8080','Кто занял порт']
+  ]},
+  { title:'Права', head:['Число','Значение'], rows:[
+    ['644','Обычный файл: владелец пишет, все читают'],['755','Каталог или исполняемый скрипт'],['600','Приватный ключ, секретный конфиг'],
+    ['700','Приватный каталог, например `~/.ssh`'],['640','Владелец пишет, группа читает'],['777','Всем всё — почти всегда ошибка']
+  ]},
+  { title:'cron', head:['Выражение','Когда'], rows:[
+    ['*/5 * * * *','Каждые 5 минут'],['0 * * * *','Каждый час в :00'],['0 3 * * *','Каждый день в 03:00'],
+    ['30 9 * * 1-5','По будням в 09:30'],['0 0 1 * *','Первого числа каждого месяца'],['0 9 * * 1','Каждый понедельник в 09:00']
+  ]},
+  { title:'Git', rows:[
+    ['git switch -c feature/x','Создать ветку и перейти в неё'],['git log --oneline --graph','Компактная история'],['git diff --staged','Что войдёт в коммит'],
+    ['git rebase main','Перенести свои коммиты поверх main'],['git push --force-with-lease','Безопасный force push'],['git revert <sha>','Отменить коммит новым коммитом'],
+    ['git reset --soft HEAD~1','Убрать последний локальный коммит, сохранив изменения'],['git reflog','История перемещений HEAD'],['git stash / git stash pop','Отложить и вернуть изменения']
+  ]},
+  { title:'Docker', rows:[
+    ['docker build -t app:1.0 .','Собрать образ'],['docker run -d -p 8080:3000 app:1.0','Запустить в фоне с портом'],['docker ps -a','Все контейнеры'],
+    ['docker logs -f name','Логи в реальном времени'],['docker exec -it name sh','Зайти в контейнер'],['docker compose up -d --build','Поднять окружение'],
+    ['docker system df','Сколько места занимает Docker'],['docker image prune -a','Удалить неиспользуемые образы'],['docker history app:1.0','Слои образа']
+  ]},
+  { title:'kubectl', rows:[
+    ['kubectl get pods -n ns -o wide','Поды с нодами и IP'],['kubectl describe pod name','Подробности и Events'],['kubectl logs name --previous','Лог упавшего контейнера'],
+    ['kubectl exec -it name -- sh','Зайти в контейнер пода'],['kubectl apply -f file.yaml','Применить манифест'],['kubectl rollout status deploy/x','Ход раскатки'],
+    ['kubectl rollout undo deploy/x','Откат на прошлую версию'],['kubectl port-forward svc/x 8080:80','Пробросить порт к себе'],['kubectl get events --sort-by=.lastTimestamp','События по времени']
+  ]},
+  { title:'Статусы подов', head:['Статус','Что проверить'], rows:[
+    ['Pending','Ресурсы нод, nodeSelector, PVC — смотрите Events'],['ImagePullBackOff','Имя и тег образа, доступ к реестру'],['CrashLoopBackOff','`kubectl logs --previous`, конфиг и переменные'],
+    ['OOMKilled','Лимит памяти и утечки'],['0/1 Ready','Эндпоинт readinessProbe, зависимости']
+  ]},
+  { title:'Коды HTTP за прокси', head:['Код','Что обычно значит'], rows:[
+    ['502','Прокси получил плохой ответ: приложение упало или слушает не тот порт'],['503','Нет готовых бэкендов: все поды не Ready'],
+    ['504','Бэкенд не ответил за таймаут'],['429','Сработал лимит запросов'],['413','Тело запроса больше лимита прокси']
+  ]}
+];
+
+// ====== ИНТЕРАКТИВНЫЕ ВИДЖЕТЫ ======
+let wSeq = 0;
+const WIDGETS = {
+  // Путь коммита до продакшена
+  pipeline(el){
+    const steps = [
+      { n:'commit', t:'Разработчик делает коммит в отдельной ветке и `git push`. Код лежит в удалённом репозитории.' },
+      { n:'pull request', t:'Открыт пулл-реквест. Коллега смотрит изменения, CI запускается автоматически на каждый push.' },
+      { n:'build', t:'CI собирает проект на чистой машине: ставит зависимости, компилирует. «У меня работает» здесь не считается.' },
+      { n:'test', t:'Юнит- и интеграционные тесты, линтер, проверка уязвимостей. Если что-то падает, конвейер останавливается и PR нельзя влить.' },
+      { n:'image', t:'Из собранного кода делается Docker-образ с тегом по хешу коммита, например `app:3f9c2ab`. Это неизменяемый артефакт.' },
+      { n:'registry', t:'Образ отправляется в реестр (GHCR, Docker Hub, ECR). Дальше все окружения берут один и тот же образ.' },
+      { n:'staging', t:'Автодеплой на staging: копию прода с тестовыми данными. Прогоняются смоук-тесты.' },
+      { n:'production', t:'Деплой в прод постепенно (rolling или canary). Пользователи получают новую версию без простоя.' },
+      { n:'monitoring', t:'Метрики, логи и алерты показывают, всё ли в порядке. Если ошибок стало больше, версию откатывают.' }
+    ];
+    const id = 'pf' + (++wSeq);
+    let k = 0, fail = false;
+    el.className = 'widget';
+    const draw = () => {
+      const failed = fail && k >= 3;
+      const cur = failed ? 3 : k;
+      el.innerHTML = `<div class="stages">${steps.map((s, i) => `<span class="stage ${failed && i === 3 ? 'fail' : i < cur ? 'done' : i === cur ? 'cur' : ''}">${i < cur ? '✓ ' : failed && i === 3 ? '✕ ' : ''}${s.n}</span>`).join('')}</div>
+      <p style="margin:0"><b>Шаг ${cur + 1}/${steps.length}.</b> ${failed ? 'Тест упал. Конвейер остановлен, до прода ничего не дошло. Разработчик получает уведомление, чинит код и пушит снова: всё начинается заново.' : fmt(steps[cur].t)}</p>
+      <div class="row"><button class="btn ghost sm" data-d="-1" ${k === 0 ? 'disabled' : ''}>← Назад</button><button class="btn sm" data-d="1" ${k === steps.length - 1 || failed ? 'disabled' : ''}>Шаг вперёд →</button>
+      <label class="small" for="${id}" style="display:flex;gap:6px;align-items:center;cursor:pointer"><input type="checkbox" id="${id}" ${fail ? 'checked' : ''}> тесты падают</label></div>`;
+      el.querySelectorAll('[data-d]').forEach(b => b.onclick = () => { k = Math.max(0, Math.min(steps.length - 1, (failed ? 3 : k) + +b.dataset.d)); draw(); });
+      el.querySelector('#' + id).onchange = e => { fail = e.target.checked; if (fail && k > 3) k = 3; draw(); };
+    };
+    draw();
+  },
+
+  // Калькулятор chmod
+  chmod(el){
+    const id = 'cm' + (++wSeq);
+    let bits = [7, 5, 5];
+    el.className = 'widget';
+    const who = ['владелец (u)', 'группа (g)', 'остальные (o)'], what = ['r', 'w', 'x'], val = [4, 2, 1];
+    el.innerHTML = `<div class="perm"><span></span><b>r · 4</b><b>w · 2</b><b>x · 1</b>
+      ${who.map((w, i) => `<span>${w}</span>` + what.map((p, j) => `<label for="${id}_${i}${j}"><input type="checkbox" id="${id}_${i}${j}" data-i="${i}" data-j="${j}" aria-label="${w}: ${p}"></label>`).join('')).join('')}</div>
+      <div class="row"><label for="${id}_oct" class="small">Восьмеричная запись</label><input type="text" id="${id}_oct" class="mono" maxlength="3" style="width:90px" autocomplete="off"></div>
+      <div class="out"></div>`;
+    const oct = el.querySelector('#' + id + '_oct'), out = el.querySelector('.out');
+    const sym = () => '-' + bits.map(b => val.map((v, j) => b & v ? what[j] : '-').join('')).join('');
+    const note = () => {
+      const s = bits.join('');
+      return { '755':'Типично для каталогов и исполняемых скриптов: всем можно читать и запускать, менять только владельцу.', '644':'Типично для обычных файлов: владелец пишет, остальные читают.', '600':'Приватный файл: только владелец. Так должен лежать приватный SSH-ключ.', '700':'Приватный каталог или скрипт только для владельца, например `~/.ssh`.', '777':'Все могут всё. Почти всегда ошибка: любой пользователь системы может подменить файл.', '400':'Только чтение владельцем. Подходит для ключей и сертификатов.', '640':'Владелец пишет, группа читает. Удобно для конфигов с паролями, которые читает сервис из группы.' }[s] || 'Каждая цифра — сумма прав: r=4, w=2, x=1. Для каталога x означает право в него заходить.';
+    };
+    const draw = (fromInput) => {
+      el.querySelectorAll('input[type=checkbox]').forEach(c => c.checked = !!(bits[+c.dataset.i] & val[+c.dataset.j]));
+      if (!fromInput) oct.value = bits.join('');
+      out.innerHTML = `<div class="kv"><div><span>ls -l покажет</span><b>${sym()}</b></div><div><span>Команда</span><b>chmod ${bits.join('')} file</b></div><div><span>Символьно</span><b>u=${what.filter((p, j) => bits[0] & val[j]).join('')},g=${what.filter((p, j) => bits[1] & val[j]).join('')},o=${what.filter((p, j) => bits[2] & val[j]).join('')}</b></div></div><p class="small" style="margin:10px 0 0">${fmt(note())}</p>`;
+    };
+    el.querySelectorAll('input[type=checkbox]').forEach(c => c.onchange = () => { const i = +c.dataset.i, v = val[+c.dataset.j]; bits[i] = c.checked ? bits[i] | v : bits[i] & ~v; draw(); });
+    oct.oninput = () => { if (/^[0-7]{3}$/.test(oct.value)){ bits = oct.value.split('').map(Number); draw(true); } };
+    draw();
+  },
+
+  // Расшифровка cron
+  cron(el){
+    const id = 'cr' + (++wSeq);
+    el.className = 'widget';
+    const presets = ['*/15 9-18 * * 1-5', '0 3 * * *', '0 */6 * * *', '30 2 1 * *', '0 9 * * 1'];
+    el.innerHTML = `<div class="row"><label for="${id}" class="small">Выражение: минута час день месяц день_недели</label></div>
+      <input type="text" id="${id}" class="mono" value="${presets[0]}" autocomplete="off" spellcheck="false" style="width:100%;max-width:360px;font-size:1.05rem">
+      <div class="row">${presets.map(p => `<button class="btn ghost sm mono" data-p="${p}">${p}</button>`).join('')}</div><div class="out"></div>`;
+    const inp = el.querySelector('#' + id), out = el.querySelector('.out');
+    const MON = ['', 'январь', 'февраль', 'март', 'апрель', 'май', 'июнь', 'июль', 'август', 'сентябрь', 'октябрь', 'ноябрь', 'декабрь'];
+    const DOW = ['вс', 'пн', 'вт', 'ср', 'чт', 'пт', 'сб', 'вс'];
+    const field = (s, min, max) => {
+      const set = new Set();
+      for (const part of s.split(',')){
+        const m = part.match(/^(\*|\d+(?:-\d+)?)(?:\/(\d+))?$/); if (!m) return null;
+        let a, b;
+        if (m[1] === '*'){ a = min; b = max; } else { [a, b] = m[1].split('-').map(Number); if (b === undefined) b = m[2] ? max : a; }
+        const step = m[2] ? +m[2] : 1;
+        if (a < min || b > max || a > b || step < 1) return null;
+        for (let i = a; i <= b; i += step) set.add(i);
+      }
+      return set;
+    };
+    const say = (s, names, unit) => {
+      if (s === '*') return 'любой';
+      return s.split(',').map(p => {
+        const m = p.match(/^(\*|\d+(?:-\d+)?)(?:\/(\d+))?$/);
+        const nm = x => names ? names[+x] : x;
+        let base = m[1] === '*' ? '' : m[1].includes('-') ? m[1].split('-').map(nm).join('–') : nm(m[1]);
+        if (m[2]) return `каждые ${m[2]} ${unit}` + (base ? ` в диапазоне ${base}` : '');
+        return base;
+      }).join(', ');
+    };
+    const calc = () => {
+      const f = inp.value.trim().split(/\s+/);
+      const bad = msg => out.innerHTML = `<p class="small" style="color:var(--bad);margin:0">${msg}</p>`;
+      if (f.length !== 5) return bad('Нужно ровно 5 полей через пробел: минута, час, день месяца, месяц, день недели.');
+      const sets = [field(f[0], 0, 59), field(f[1], 0, 23), field(f[2], 1, 31), field(f[3], 1, 12), field(f[4], 0, 7)];
+      const names = ['минута', 'час', 'день месяца', 'месяц', 'день недели'];
+      const wrong = sets.findIndex(s => !s);
+      if (wrong >= 0) return bad(`Поле «${names[wrong]}» записано неверно. Допустимо: *, число, диапазон 1-5, список 1,3,5, шаг */10.`);
+      if (sets[4].has(7)) sets[4].add(0);
+      const domR = f[2] !== '*', dowR = f[4] !== '*';
+      const runs = []; const d = new Date(); d.setSeconds(0, 0); d.setMinutes(d.getMinutes() + 1);
+      for (let i = 0; i < 600000 && runs.length < 5; i++){
+        const dm = sets[2].has(d.getDate()), dw = sets[4].has(d.getDay());
+        const day = domR && dowR ? (dm || dw) : (dm && dw);
+        if (sets[0].has(d.getMinutes()) && sets[1].has(d.getHours()) && sets[3].has(d.getMonth() + 1) && day) runs.push(new Date(d));
+        d.setMinutes(d.getMinutes() + 1);
+      }
+      out.innerHTML = `<div class="kv"><div><span>Минута</span><b>${say(f[0], null, 'мин')}</b></div><div><span>Час</span><b>${say(f[1], null, 'ч')}</b></div><div><span>День месяца</span><b>${say(f[2], null, 'дн')}</b></div><div><span>Месяц</span><b>${say(f[3], MON, 'мес')}</b></div><div><span>День недели</span><b>${say(f[4], DOW, 'дн')}</b></div></div>
+      ${domR && dowR ? '<p class="small" style="margin:10px 0 0">Заданы и день месяца, и день недели: cron запустит задачу, если совпало <b>любое</b> из двух условий.</p>' : ''}
+      <div class="wlabel" style="margin-top:14px">Ближайшие запуски (время вашего браузера)</div>
+      ${runs.length ? `<ol class="runs">${runs.map(r => `<li>${r.toLocaleString('ru-RU', { weekday:'short', day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit' })}</li>`).join('')}</ol>` : '<p class="small">Такая дата не наступит в ближайший год (например, 31 февраля).</p>'}`;
+    };
+    el.querySelectorAll('[data-p]').forEach(b => b.onclick = () => { inp.value = b.dataset.p; calc(); });
+    inp.oninput = calc; calc();
+  },
+
+  // Кэш слоёв Docker
+  layers(el){
+    const files = {
+      bad:[
+        { t:'FROM node:20-alpine', s:2 }, { t:'WORKDIR /app', s:0 },
+        { t:'COPY . .', s:1, dep:['code', 'deps'] }, { t:'RUN npm ci', s:45 },
+        { t:'RUN npm run build', s:12 }, { t:'CMD ["node", "dist/server.js"]', s:0 }
+      ],
+      good:[
+        { t:'FROM node:20-alpine', s:2 }, { t:'WORKDIR /app', s:0 },
+        { t:'COPY package.json package-lock.json ./', s:1, dep:['deps'] }, { t:'RUN npm ci', s:45 },
+        { t:'COPY . .', s:1, dep:['code', 'deps'] }, { t:'RUN npm run build', s:12 },
+        { t:'CMD ["node", "dist/server.js"]', s:0 }
+      ]
+    };
+    let file = 'bad', change = 'code';
+    el.className = 'widget';
+    const draw = () => {
+      const ls = files[file];
+      let from = change === 'none' ? ls.length : ls.findIndex(l => l.dep && l.dep.includes(change));
+      if (change === 'base') from = 0;
+      const total = ls.slice(from).reduce((a, l) => a + l.s, 0);
+      el.innerHTML = `<div class="row"><span class="wlabel">Dockerfile</span><div class="seg" role="group" aria-label="Порядок инструкций"><button data-f="bad" class="${file === 'bad' ? 'on' : ''}">Наивный порядок</button><button data-f="good" class="${file === 'good' ? 'on' : ''}">Правильный порядок</button></div></div>
+      <div class="row"><span class="wlabel">Что изменили</span><div class="seg" role="group" aria-label="Изменение"><button data-c="code" class="${change === 'code' ? 'on' : ''}">код в src/</button><button data-c="deps" class="${change === 'deps' ? 'on' : ''}">package.json</button><button data-c="base" class="${change === 'base' ? 'on' : ''}">базовый образ</button><button data-c="none" class="${change === 'none' ? 'on' : ''}">ничего</button></div></div>
+      <div class="layers">${ls.map((l, i) => `<div class="layer ${i < from ? 'cached' : 'rebuild'}"><code>${esc(l.t)}</code><span class="st">${i < from ? 'CACHED' : 'пересборка · ' + l.s + ' с'}</span></div>`).join('')}</div>
+      <p style="margin:0"><b>Сборка: ~${total} с.</b> ${file === 'bad' && change === 'code' ? 'Любая правка кода меняет слой <code>COPY . .</code>, и Docker заново ставит все зависимости. Переключитесь на правильный порядок.' : file === 'good' && change === 'code' ? 'Зависимости взяты из кэша: они зависят только от package.json, который не менялся.' : change === 'deps' ? 'Изменились зависимости — их нужно поставить заново, это честная пересборка.' : change === 'base' ? 'Новый базовый образ инвалидирует все слои над ним.' : 'Ничего не изменилось — все слои из кэша.'}</p>`;
+      el.querySelectorAll('[data-f]').forEach(b => b.onclick = () => { file = b.dataset.f; draw(); });
+      el.querySelectorAll('[data-c]').forEach(b => b.onclick = () => { change = b.dataset.c; draw(); });
+    };
+    draw();
+  },
+
+  // Стратегии деплоя
+  rollout(el){
+    const P = (v, s = 'ready') => ({ v, s });
+    const R = n => Array.from({ length:n }, () => P(1)), N = n => Array.from({ length:n }, () => P(2));
+    const S = {
+      rolling:{ name:'Rolling update', steps:[
+        { pods:R(4), tr:[100, 0], t:'Исходное состояние: 4 пода версии v1 за одним Service.' },
+        { pods:[...R(4), P(2, 'starting')], tr:[100, 0], t:'Создаётся под v2 (maxSurge: 1). Трафик на него не идёт, пока не пройдёт readinessProbe.' },
+        { pods:[...R(3), P(1, 'term'), P(2)], tr:[75, 25], t:'Под v2 готов и попал в Service. Один под v1 завершается (maxUnavailable: 0 — ёмкость не проседает).' },
+        { pods:[...R(2), P(1, 'term'), ...N(2)], tr:[50, 50], t:'Так же заменяется следующий под. Обе версии работают одновременно, поэтому API должно быть обратно совместимым.' },
+        { pods:[P(1), P(1, 'term'), ...N(3)], tr:[25, 75], t:'Ещё один шаг.' },
+        { pods:N(4), tr:[0, 100], t:'Готово. Если новые поды не проходят readiness, раскатка останавливается сама, а старые продолжают работать.' }
+      ]},
+      bluegreen:{ name:'Blue-green', steps:[
+        { pods:R(4), tr:[100, 0], t:'Синее окружение (v1) обслуживает всех пользователей.' },
+        { pods:[...R(4), ...Array.from({ length:4 }, () => P(2, 'starting'))], tr:[100, 0], t:'Рядом поднимается полная копия — зелёное окружение v2. Нужны ресурсы на два окружения сразу.' },
+        { pods:[...R(4), ...N(4)], tr:[100, 0], t:'Зелёное готово. Его можно проверить смоук-тестами, пока пользователи всё ещё на синем.' },
+        { pods:[...R(4), ...N(4)], tr:[0, 100], t:'Переключение: балансировщик мгновенно отправляет весь трафик на зелёное. Откат — такое же мгновенное переключение обратно.' },
+        { pods:[...R(4).map(p => ({ ...p, s:'term' })), ...N(4)], tr:[0, 100], t:'Когда новая версия стабильна, синее окружение удаляют или оставляют под следующий релиз.' }
+      ]},
+      canary:{ name:'Canary', steps:[
+        { pods:R(4), tr:[100, 0], t:'Все пользователи на v1.' },
+        { pods:[...R(4), P(2)], tr:[95, 5], t:'Канарейка: 5% трафика уходит на v2. Сравниваем ошибки и задержки с v1.' },
+        { pods:[...R(3), ...N(2)], tr:[75, 25], t:'Метрики в норме — доля растёт. Если ошибок больше, весь трафик возвращают на v1, задето лишь 5% пользователей.' },
+        { pods:[...R(2), ...N(3)], tr:[50, 50], t:'Половина трафика на новой версии. Обычно этим управляет Argo Rollouts или Flagger по метрикам автоматически.' },
+        { pods:N(4), tr:[0, 100], t:'v2 получила весь трафик.' }
+      ]},
+      recreate:{ name:'Recreate', steps:[
+        { pods:R(4), tr:[100, 0], t:'Все поды v1 работают.' },
+        { pods:R(4).map(p => ({ ...p, s:'term' })), tr:[0, 0], t:'Все старые поды удаляются сразу. Сервис недоступен — это простой.' },
+        { pods:Array.from({ length:4 }, () => P(2, 'starting')), tr:[0, 0], t:'Поднимаются новые поды. Пользователи всё ещё видят ошибку.' },
+        { pods:N(4), tr:[0, 100], t:'Сервис снова работает. Подходит, когда две версии не могут работать одновременно (например, несовместимая миграция БД), и простой допустим.' }
+      ]}
+    };
+    let cur = 'rolling', k = 0;
+    el.className = 'widget';
+    const draw = () => {
+      const st = S[cur], step = st.steps[k], none = step.tr[0] + step.tr[1] === 0;
+      el.innerHTML = `<div class="seg" role="group" aria-label="Стратегия">${Object.entries(S).map(([key, s]) => `<button data-s="${key}" class="${key === cur ? 'on' : ''}">${s.name}</button>`).join('')}</div>
+      <div class="envbox"><span class="lbl">поды</span><div class="pods">${step.pods.map(p => `<div class="pod ${p.v === 2 ? 'v2' : ''} ${p.s === 'starting' ? 'starting' : ''} ${p.s === 'term' ? 'term' : ''}">v${p.v}<small>${p.s === 'starting' ? 'запуск' : p.s === 'term' ? 'стоп' : 'ready'}</small></div>`).join('')}</div></div>
+      <div class="envbox"><span class="lbl">трафик пользователей: ${none ? 'нет — сервис недоступен' : `v1 ${step.tr[0]}% · v2 ${step.tr[1]}%`}</span><div class="traffic">${none ? '<i style="width:100%;background:var(--bad)"></i>' : `<i style="width:${step.tr[0]}%;background:var(--muted)"></i><i style="width:${step.tr[1]}%;background:var(--accent)"></i>`}</div></div>
+      <p style="margin:0"><b>Шаг ${k + 1}/${st.steps.length}.</b> ${fmt(step.t)}</p>
+      <div class="row"><button class="btn ghost sm" data-d="-1" ${k === 0 ? 'disabled' : ''}>← Назад</button><button class="btn sm" data-d="1" ${k === st.steps.length - 1 ? 'disabled' : ''}>Шаг вперёд →</button></div>`;
+      el.querySelectorAll('[data-s]').forEach(b => b.onclick = () => { cur = b.dataset.s; k = 0; draw(); });
+      el.querySelectorAll('[data-d]').forEach(b => b.onclick = () => { k += +b.dataset.d; draw(); });
+    };
+    draw();
+  }
+};
+
+// ====== ХРАНЕНИЕ ПРОГРЕССА ======
+const KEY = 'devops-course-progress';
+const PASS = 70;
+const blank = () => ({ app:'devops-course', version:1, savedAt:new Date().toISOString(), lessons:{}, tests:{}, exam:null, settings:{ theme:'system', unlockAll:false } });
+const valid = p => p && p.app === 'devops-course' && p.version === 1;
+function normalize(p){ const b = blank(); return { ...b, ...p, lessons:p.lessons || {}, tests:p.tests || {}, settings:{ ...b.settings, ...(p.settings || {}) } }; }
+
+const store = {
+  state: blank(), ok: true, lastSave: null,
+  load(){
+    try { const raw = localStorage.getItem(KEY); if (raw){ const p = JSON.parse(raw); if (valid(p)) this.state = normalize(p); } }
+    catch(e){ this.ok = false; }
+  },
+  save(){
+    this.state.savedAt = new Date().toISOString();
+    try { localStorage.setItem(KEY, JSON.stringify(this.state)); this.ok = true; this.lastSave = new Date(); }
+    catch(e){ this.ok = false; }
+    renderStatus();
+  },
+  parse(text){
+    let d; try { d = JSON.parse(text); } catch(e){ toast('Это не JSON. Проверьте, что вставили весь текст файла.'); return null; }
+    if (!valid(d)){ toast('Это не файл прогресса курса DevOps.'); return null; }
+    return normalize(d);
+  },
+  merge(a, b){
+    const out = normalize(JSON.parse(JSON.stringify(a)));
+    for (const [id, l] of Object.entries(b.lessons)) if (l.completed && !(out.lessons[id] && out.lessons[id].completed)) out.lessons[id] = l;
+    for (const [id, t] of Object.entries(b.tests)){
+      const o = out.tests[id];
+      if (!o){ out.tests[id] = t; continue; }
+      const nw = t.lastAt > o.lastAt ? t : o;
+      out.tests[id] = { best:Math.max(o.best, t.best), attempts:Math.max(o.attempts, t.attempts), last:nw.last, lastAt:nw.lastAt, wrong:nw.wrong };
+    }
+    if (b.exam){ const o = out.exam; out.exam = !o ? b.exam : { best:Math.max(o.best, b.exam.best), attempts:Math.max(o.attempts, b.exam.attempts), lastAt:o.lastAt > b.exam.lastAt ? o.lastAt : b.exam.lastAt }; }
+    return out;
+  },
+  apply(d, mode){ this.state = mode === 'merge' ? this.merge(this.state, d) : normalize(d); applyTheme(); this.save(); },
+  json(){ return JSON.stringify(this.state, null, 2); },
+  download(){
+    try {
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(new Blob([this.json()], { type:'application/json' }));
+      a.download = 'devops-course-progress-' + new Date().toISOString().slice(0, 10) + '.json';
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+      toast('Файл прогресса скачан. Если загрузка не началась, используйте «Скопировать».');
+    } catch(e){ toast('Скачивание недоступно. Используйте «Скопировать».'); }
+  },
+  async copy(){
+    try { await navigator.clipboard.writeText(this.json()); toast('Прогресс скопирован в буфер обмена.'); }
+    catch(e){ const t = $('#exportBox'); if (t){ t.hidden = false; t.value = this.json(); t.select(); } toast('Выделил текст ниже — скопируйте его вручную (Ctrl+C).'); }
+  },
+  reset(){ const s = this.state.settings; this.state = blank(); this.state.settings = s; this.save(); }
+};
+const S = () => store.state;
+let pendingImport = null, confirmReset = false;
+
+// ====== УТИЛИТЫ ======
+const $ = s => document.querySelector(s);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c]));
+const fmt = s => esc(s).replace(/`([^`]+)`/g, '<code>$1</code>');
+const plain = s => String(s).replace(/`/g, '');
+const pad = n => String(n).padStart(2, '0');
+function shuffle(a){ a = a.slice(); for (let i = a.length - 1; i > 0; i--){ const j = Math.random() * (i + 1) | 0; [a[i], a[j]] = [a[j], a[i]]; } return a; }
+function toast(m){ const t = document.createElement('div'); t.className = 'toast'; t.setAttribute('role', 'status'); t.textContent = m; document.body.appendChild(t); setTimeout(() => t.remove(), 3400); }
+const allLessons = () => MODULES.flatMap(m => m.lessons.map((l, i) => ({ ...l, module:m, num:m.id + '.' + (i + 1) })));
+const getLesson = id => allLessons().find(l => l.id === id);
+const getModule = id => MODULES.find(m => m.id === +id);
+const isDone = id => !!(S().lessons[id] && S().lessons[id].completed);
+function mstat(m){
+  const done = m.lessons.filter(l => isDone(l.id)).length;
+  const t = S().tests['m' + m.id];
+  return { done, total:m.lessons.length, test:t, passed:!!(t && t.best >= PASS) };
+}
+function unlocked(m){ if (S().settings.unlockAll || m.id === 0) return true; const p = getModule(m.id - 1); return !p || mstat(p).passed; }
+function overall(){
+  const ls = allLessons(); const done = ls.filter(l => isDone(l.id)).length;
+  const passed = MODULES.filter(m => mstat(m).passed).length;
+  return { pct:Math.round((done + passed) / (ls.length + MODULES.length) * 100), done, total:ls.length, passed };
+}
+
+// ====== ТЕМА ======
+function applyTheme(){ const t = S().settings.theme; if (t === 'system') document.documentElement.removeAttribute('data-theme'); else document.documentElement.setAttribute('data-theme', t); }
+$('#themeBtn').onclick = () => {
+  const order = ['system', 'light', 'dark'];
+  S().settings.theme = order[(order.indexOf(S().settings.theme) + 1) % 3];
+  applyTheme(); store.save();
+  toast('Тема: ' + { system:'как в системе', light:'светлая', dark:'тёмная' }[S().settings.theme]);
+};
+$('#menuBtn').onclick = () => $('#side').classList.toggle('open');
+$('#scrim').onclick = () => $('#side').classList.remove('open');
+
+function renderStatus(){
+  const el = $('#saveStatus');
+  el.classList.toggle('warn', !store.ok);
+  el.lastElementChild.textContent = store.ok ? 'Сохранено в браузере' + (store.lastSave ? ' · ' + store.lastSave.toLocaleTimeString('ru-RU', { hour:'2-digit', minute:'2-digit' }) : '') : 'Браузер не сохраняет — сделайте копию';
+}
+
+// ====== НАВИГАЦИЯ ======
+function renderSide(){
+  const h = location.hash || '#/';
+  const link = (href, inner, cls = '') => `<a href="${href}" class="${h === href || (href !== '#/' && h.startsWith(href + '/')) ? 'active' : ''} ${cls}">${inner}</a>`;
+  let html = `<a class="brand" href="#/"><svg width="28" height="28" viewBox="0 0 28 28" aria-hidden="true"><path d="M9 9.5a5 5 0 1 0 0 9c2.6 0 4.2-2.2 5-4.5s2.4-4.5 5-4.5a5 5 0 1 1 0 9c-2.6 0-4.2-2.2-5-4.5S11.6 9.5 9 9.5Z" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="19" cy="14" r="2.2" fill="var(--accent)"/></svg>DevOps для разработчиков</a><nav class="nav">`;
+  html += link('#/', '<span class="port">~</span>Главная');
+  html += '<div class="nav-label">Модули</div>';
+  for (const m of MODULES){
+    const s = mstat(m), un = unlocked(m);
+    const dot = s.passed ? 'on' : (s.done ? 'part' : '');
+    html += link('#/m/' + m.id, `<span class="dot ${dot}"></span><span class="port">${pad(m.id)}</span><span>${esc(m.title)}</span>${un ? '' : '<span class="lock">закрыт</span>'}`, un ? '' : 'locked');
+  }
+  for (const m of UPCOMING) html += `<a class="locked" href="#/m/${m.id}"><span class="dot"></span><span class="port">${pad(m.id)}</span><span>${esc(m.title)}</span><span class="lock">скоро</span></a>`;
+  html += '<div class="nav-label">Практика</div>' + link('#/exam', '<span class="port">∑</span>Финальный экзамен') + link('#/tools', '<span class="port">⚙</span>Инструменты');
+  html += '<div class="nav-label">Справка</div>' + link('#/glossary', '<span class="port">A</span>Глоссарий') + link('#/cheats', '<span class="port">#</span>Шпаргалки') + link('#/progress', '<span class="port">↓</span>Прогресс');
+  $('#side').innerHTML = html + '</nav>';
+}
+
+let examTimer = null;
+function render(){
+  clearInterval(examTimer);
+  $('#side').classList.remove('open');
+  renderSide(); renderStatus();
+  const [r, a, b] = (location.hash || '#/').slice(1).split('/').filter(Boolean);
+  const v = $('#view');
+  if (!r) v.innerHTML = viewHome();
+  else if (r === 'm') v.innerHTML = viewModule(a);
+  else if (r === 'l'){ v.innerHTML = viewLesson(a); mountLesson(a); }
+  else if (r === 't'){ v.innerHTML = '<div id="testRoot"></div>'; startTest(a, b === 'errors'); }
+  else if (r === 'exam'){ v.innerHTML = '<div id="testRoot"></div>'; examIntro(); }
+  else if (r === 'tools'){ v.innerHTML = viewTools(); mountWidgets(v); }
+  else if (r === 'glossary'){ v.innerHTML = viewGlossary(); mountGlossary(); }
+  else if (r === 'cheats') v.innerHTML = viewCheats();
+  else if (r === 'progress'){ v.innerHTML = viewProgress(); mountProgress(); }
+  else v.innerHTML = '<h1>Страница не найдена</h1><p><a href="#/">На главную</a></p>';
+  window.scrollTo(0, 0);
+}
+window.addEventListener('hashchange', render);
+
+// ====== ГЛАВНАЯ ======
+function viewHome(){
+  const o = overall();
+  const next = allLessons().find(l => !isDone(l.id) && unlocked(l.module));
+  const testDue = MODULES.find(m => unlocked(m) && !mstat(m).passed && mstat(m).done === m.lessons.length);
+  const cont = testDue ? '#/t/' + testDue.id : (next ? '#/l/' + next.id : '#/exam');
+  const banner = !store.ok ? '<div class="banner"><span>Браузер не даёт сохранять прогресс (приватный режим или запрет хранилища). Скопируйте прогресс вручную на странице «Прогресс».</span><a class="btn ghost sm" href="#/progress">Открыть</a></div>' : '';
+  let html = banner + `<section class="hero"><div class="eyebrow">курс · ${MODULES.length + UPCOMING.length} модулей · ${o.total} уроков</div>
+  <h1>DevOps для разработчиков</h1>
+  <p>Как код проходит путь от <code>git push</code> до работающего сервиса: Linux, Bash, Git, Docker, CI/CD и Kubernetes. Короткая теория, реальные команды и конфиги, тесты после каждого модуля.</p>
+  <div class="stats"><div class="stat"><b>${o.pct}%</b><span>курса пройдено</span></div><div class="stat"><b>${o.done}/${o.total}</b><span>уроков</span></div><div class="stat"><b>${o.passed}/${MODULES.length}</b><span>тестов сдано</span></div></div>
+  <div class="meter" aria-label="Прогресс курса ${o.pct}%"><i style="width:${o.pct}%"></i></div>
+  <div class="row"><a class="btn" href="${cont}">${o.done ? 'Продолжить' : 'Начать обучение'} →</a><a class="btn ghost" href="#/tools">Инструменты</a></div></section>
+  <h2 style="margin-bottom:14px">Карта курса</h2><div class="mods">`;
+  for (const m of MODULES){
+    const s = mstat(m), un = unlocked(m);
+    const tag = s.passed ? `<span class="tag ok">тест ${s.test.best}%</span>` : (un ? `<span class="tag">${s.done}/${s.total}</span>` : '<span class="tag muted">закрыт</span>');
+    html += `<a class="mod ${un ? '' : 'locked'}" href="#/m/${m.id}"><div class="num"><span>МОДУЛЬ ${pad(m.id)}</span>${tag}</div><h3>${esc(m.title)}</h3><p>${esc(m.short)}</p><div class="meter"><i style="width:${Math.round(s.done / s.total * 100)}%"></i></div></a>`;
+  }
+  for (const m of UPCOMING) html += `<a class="mod soon" href="#/m/${m.id}"><div class="num"><span>МОДУЛЬ ${pad(m.id)}</span><span class="tag muted">скоро</span></div><h3>${esc(m.title)}</h3><p>${esc(m.short)}</p></a>`;
+  return html + '</div>';
+}
+
+// ====== МОДУЛЬ ======
+function viewModule(id){
+  const up = UPCOMING.find(m => m.id === +id);
+  if (up) return `<div class="crumbs"><a href="#/">главная</a> / модуль ${pad(up.id)}</div><h1>${esc(up.title)}</h1><p class="small">${esc(up.short)}</p><div class="note" style="margin-top:16px">Модуль в разработке. План уроков: ${esc(up.plan)}.</div>`;
+  const m = getModule(id); if (!m) return '<h1>Модуль не найден</h1>';
+  const s = mstat(m);
+  let html = `<div class="crumbs"><a href="#/">главная</a> / модуль ${pad(m.id)}</div><h1>${esc(m.title)}</h1><p class="small" style="margin:8px 0 20px">${esc(m.short)} · ${s.done} из ${s.total} уроков</p>`;
+  if (!unlocked(m)) return html + `<div class="note warn">Модуль откроется после сдачи теста модуля «${esc(getModule(m.id - 1).title)}» на ${PASS}% и выше. Блокировку можно снять на странице <a href="#/progress">«Прогресс»</a>.</div>`;
+  html += '<div class="list">' + m.lessons.map((l, i) => `<a href="#/l/${l.id}"><span class="dot ${isDone(l.id) ? 'on' : ''}"></span><span class="port">${m.id}.${i + 1}</span><span class="grow">${esc(l.title)}</span>${isDone(l.id) ? '<span class="tag ok">пройден</span>' : ''}</a>`).join('') + '</div>';
+  html += `<h2 style="margin:30px 0 8px">Тест модуля</h2><p class="small">${m.test.length} вопросов, порог ${PASS}%. ${s.test ? `Лучший результат <b>${s.test.best}%</b>, попыток: ${s.test.attempts}.` : 'Ещё не проходили.'}</p>
+  <div class="row"><a class="btn" href="#/t/${m.id}">${s.test ? 'Пройти снова' : 'Начать тест'}</a>${s.test && s.test.wrong.length ? `<a class="btn ghost" href="#/t/${m.id}/errors">Повторить ошибки (${s.test.wrong.length})</a>` : ''}</div>`;
+  return html;
+}
+
+// ====== УРОК ======
+function viewLesson(id){
+  const l = getLesson(id); if (!l) return '<h1>Урок не найден</h1><p><a href="#/">На главную</a></p>';
+  if (!unlocked(l.module)) return `<h1>${esc(l.title)}</h1><div class="note warn" style="margin-top:16px">Урок откроется после сдачи теста предыдущего модуля.</div>`;
+  const ls = l.module.lessons, i = ls.findIndex(x => x.id === id), prev = ls[i - 1], next = ls[i + 1], done = isDone(id);
+  return `<div class="crumbs"><a href="#/">главная</a> / <a href="#/m/${l.module.id}">${esc(l.module.title.toLowerCase())}</a> / урок ${l.num}</div>
+  <h1>${esc(l.title)}</h1>
+  <div class="lesson-grid"><div style="min-width:0"><article class="prose" style="margin-top:20px">${l.html}</article>
+  <h2 style="margin-top:36px" id="selfcheck">Самопроверка</h2><div id="checkRoot"></div>
+  <div class="row" style="margin-top:26px;justify-content:space-between">
+    ${prev ? `<a class="btn ghost" href="#/l/${prev.id}">← Назад</a>` : '<span></span>'}
+    <span class="row"><button class="btn ${done ? 'ghost' : ''}" id="doneBtn">${done ? '✓ Урок пройден' : 'Отметить как пройденный'}</button>
+    ${next ? `<a class="btn ghost" href="#/l/${next.id}">Далее →</a>` : `<a class="btn ghost" href="#/t/${l.module.id}">К тесту модуля →</a>`}</span>
+  </div></div>
+  <aside class="toc"><div class="nav-label">Модуль ${pad(l.module.id)}</div>
+  ${ls.map(x => `<a href="#/l/${x.id}" class="${x.id === id ? 'active' : ''}"><span class="dot ${isDone(x.id) ? 'on' : ''}"></span>${esc(x.title)}</a>`).join('')}
+  <a href="#/t/${l.module.id}"><span class="port">✓</span>Тест модуля</a>
+  <div class="nav-label" style="margin-top:10px">На странице</div><div id="tocSecs"></div></aside></div>`;
+}
+function mountLesson(id){
+  const l = getLesson(id); if (!l || !unlocked(l.module)) return;
+  mountWidgets($('#view'));
+  const secs = [...document.querySelectorAll('.prose h3'), $('#selfcheck')];
+  $('#tocSecs').innerHTML = secs.map((h, i) => { h.id = h.id || 'sec' + i; return `<a class="sub" href="#" data-sec="${h.id}">${esc(h.textContent)}</a>`; }).join('');
+  $('#tocSecs').onclick = e => { const t = e.target.closest('[data-sec]'); if (!t) return; e.preventDefault(); document.getElementById(t.dataset.sec).scrollIntoView({ behavior:'smooth' }); };
+  const root = $('#checkRoot');
+  l.check.forEach((q, i) => { const c = document.createElement('div'); root.appendChild(c); mountQ(c, q, i + 1, l.check.length, true); });
+  $('#doneBtn').onclick = () => {
+    const was = isDone(id);
+    if (was) delete S().lessons[id]; else S().lessons[id] = { completed:true, at:new Date().toISOString() };
+    store.save(); render();
+    if (!was) toast('Урок отмечен как пройденный.');
+  };
+}
+
+// ====== ВОПРОСЫ ======
+// Типы: single | multiple | order (options в правильном порядке) | match (pairs) | input (answer — массив вариантов) | analyze (single + code)
+const QTYPE = { single:'один ответ', multiple:'несколько ответов', order:'порядок', match:'сопоставление', input:'ввод ответа', analyze:'разбор вывода' };
+let qSeq = 0;
+function mountQ(el, q, n, total, instant){
+  const st = { q, el, done:false }, nm = 'q' + (++qSeq);
+  let body = '';
+  if (q.type === 'single' || q.type === 'analyze' || q.type === 'multiple'){
+    st.perm = shuffle(q.options.map((_, i) => i));
+    const t = q.type === 'multiple' ? 'checkbox' : 'radio';
+    body = st.perm.map(i => `<label class="opt" data-i="${i}"><input type="${t}" name="${nm}" id="${nm}_${i}" value="${i}"><span>${fmt(q.options[i])}</span></label>`).join('');
+  } else if (q.type === 'order'){
+    st.cur = shuffle(q.options.map((_, i) => i));
+    if (st.cur.every((v, i) => v === i)) st.cur.reverse();
+    body = '<div class="ordl"></div>';
+  } else if (q.type === 'match'){
+    const r = shuffle(q.pairs.map((_, i) => i));
+    body = q.pairs.map((p, i) => `<div class="mrow"><label for="${nm}_${i}">${fmt(p[0])}</label><select id="${nm}_${i}"><option value="">— выберите —</option>${r.map(j => `<option value="${j}">${esc(plain(q.pairs[j][1]))}</option>`).join('')}</select></div>`).join('');
+  } else if (q.type === 'input'){
+    body = `<input type="text" class="mono" id="${nm}" placeholder="Ваш ответ" autocomplete="off" spellcheck="false" style="width:100%;max-width:340px" aria-label="Ответ">`;
+  }
+  el.className = 'q';
+  el.innerHTML = `<div class="qh"><span>Вопрос ${n}/${total}</span><span>${QTYPE[q.type]}</span></div><p class="qp">${fmt(q.prompt)}</p>${q.code ? `<pre><code>${esc(q.code)}</code></pre>` : ''}<div class="qb">${body}</div>${instant ? '<div class="row" style="margin-top:12px"><button class="btn ghost sm chk">Проверить</button></div>' : ''}<div class="fbw"></div>`;
+  if (q.type === 'order') drawOrder(st);
+  if (q.type === 'input' && instant) el.querySelector('input').addEventListener('keydown', e => { if (e.key === 'Enter') el.querySelector('.chk').click(); });
+  if (instant) el.querySelector('.chk').onclick = () => {
+    if (!answered(st)){ toast('Сначала дайте ответ.'); return; }
+    feedback(st, grade(st)); el.querySelector('.chk').disabled = true;
+  };
+  return st;
+}
+function drawOrder(st){
+  const box = st.el.querySelector('.ordl');
+  box.innerHTML = st.cur.map((i, p) => `<div class="ordi" data-i="${i}"><span class="port">${p + 1}.</span><span class="t">${fmt(st.q.options[i])}</span><button aria-label="Выше" data-d="-1" ${p === 0 || st.done ? 'disabled' : ''}>↑</button><button aria-label="Ниже" data-d="1" ${p === st.cur.length - 1 || st.done ? 'disabled' : ''}>↓</button></div>`).join('');
+  box.querySelectorAll('button').forEach(b => b.onclick = () => {
+    const p = [...box.children].indexOf(b.closest('.ordi')), to = p + +b.dataset.d;
+    [st.cur[p], st.cur[to]] = [st.cur[to], st.cur[p]]; st.touched = true; drawOrder(st);
+  });
+}
+function resp(st){
+  const q = st.q, el = st.el;
+  if (q.type === 'single' || q.type === 'analyze'){ const c = el.querySelector('input:checked'); return c ? +c.value : null; }
+  if (q.type === 'multiple') return [...el.querySelectorAll('input:checked')].map(x => +x.value);
+  if (q.type === 'order') return st.cur.slice();
+  if (q.type === 'match') return [...el.querySelectorAll('select')].map(s => s.value === '' ? null : +s.value);
+  if (q.type === 'input') return el.querySelector('input').value;
+}
+function answered(st){
+  const r = resp(st), t = st.q.type;
+  if (t === 'multiple') return r.length > 0;
+  if (t === 'match') return r.some(x => x !== null);
+  if (t === 'input') return r.trim() !== '';
+  if (t === 'order') return true;
+  return r !== null;
+}
+const norm = s => String(s).trim().toLowerCase().replace(/\s+/g, ' ').replace(/^["']|["']$/g, '');
+function grade(st){
+  const q = st.q, r = resp(st);
+  switch (q.type){
+    case 'single': case 'analyze': return r === q.answer;
+    case 'multiple': return r.length === q.answer.length && q.answer.every(a => r.includes(a));
+    case 'order': return r.every((v, i) => v === i);
+    case 'match': return r.every((v, i) => v === i);
+    case 'input': return q.answer.some(a => norm(a) === norm(r));
+  }
+}
+function feedback(st, ok){
+  st.done = true; const q = st.q, el = st.el;
+  el.querySelectorAll('input,select').forEach(x => x.disabled = true);
+  if (['single', 'analyze', 'multiple'].includes(q.type)){
+    const right = Array.isArray(q.answer) ? q.answer : [q.answer];
+    el.querySelectorAll('.opt').forEach(o => { const i = +o.dataset.i; if (right.includes(i)) o.classList.add('right'); else if (o.querySelector('input').checked) o.classList.add('wrong'); });
+  }
+  if (q.type === 'order'){ drawOrder(st); el.querySelectorAll('.ordi').forEach((o, p) => o.classList.add(+o.dataset.i === p ? 'right' : 'wrong')); }
+  if (q.type === 'match') el.querySelectorAll('select').forEach((s, i) => s.classList.add(s.value !== '' && +s.value === i ? 'right' : 'wrong'));
+  let correct = '';
+  if (!ok){
+    if (q.type === 'order') correct = 'Правильный порядок: ' + q.options.map(plain).join(' → ');
+    if (q.type === 'match') correct = 'Правильно: ' + q.pairs.map(p => plain(p[0]) + ' — ' + plain(p[1])).join('; ');
+    if (q.type === 'input') correct = 'Правильный ответ: ' + q.answer[0];
+  }
+  el.querySelector('.fbw').innerHTML = `<div class="fb ${ok ? 'ok' : 'bad'}"><b>${ok ? 'Верно.' : 'Неверно.'}</b>${correct ? esc(correct) + '<br>' : ''}${fmt(q.explanation)}${!ok && q.l ? ` <a href="#/l/${q.l}">Перечитать урок ${q.l.replace('-', '.')}</a>` : ''}</div>`;
+}
+
+// ====== ТЕСТЫ И ЭКЗАМЕН ======
+function startTest(id, errorsOnly){
+  const m = getModule(id), root = $('#testRoot');
+  if (!m){ root.innerHTML = '<h1>Тест не найден</h1>'; return; }
+  if (!unlocked(m)){ root.innerHTML = `<h1>Тест: ${esc(m.title)}</h1><div class="note warn" style="margin-top:16px">Тест откроется после сдачи предыдущего модуля.</div>`; return; }
+  const rec = S().tests['m' + m.id];
+  let qs = m.test;
+  if (errorsOnly && rec) qs = qs.filter(q => rec.wrong.includes(q.id));
+  if (!qs.length){ location.hash = '#/m/' + m.id; return; }
+  runQuiz(root, shuffle(qs), {
+    title:(errorsOnly ? 'Работа над ошибками: ' : 'Тест: ') + m.title,
+    crumbs:`<a href="#/">главная</a> / <a href="#/m/${m.id}">${esc(m.title.toLowerCase())}</a> / тест`,
+    onFinish:(score, wrong) => {
+      const key = 'm' + m.id, old = S().tests[key], was = old && old.best >= PASS;
+      if (errorsOnly){
+        if (old){ old.wrong = old.wrong.filter(x => wrong.includes(x)); store.save(); }
+        return { msg:wrong.length ? `Осталось ошибок: ${wrong.length}.` : 'Все ошибки исправлены.', back:'#/m/' + m.id };
+      }
+      S().tests[key] = { best:Math.max(score, old ? old.best : 0), attempts:(old ? old.attempts : 0) + 1, last:score, lastAt:new Date().toISOString(), wrong };
+      store.save();
+      const nm = getModule(m.id + 1) || UPCOMING.find(u => u.id === m.id + 1);
+      const msg = score >= PASS ? (was ? 'Тест сдан.' : 'Тест сдан. ' + (nm ? `Открыт модуль «${nm.title}».` : '')) : `Для сдачи нужно ${PASS}%. Перечитайте уроки по ссылкам в разборе и попробуйте снова.`;
+      return { msg, back:'#/m/' + m.id, next:score >= PASS && getModule(m.id + 1) ? '#/m/' + (m.id + 1) : null, errors:wrong.length ? `#/t/${m.id}/errors` : null };
+    }
+  });
+}
+function examPool(){ return MODULES.flatMap(m => [...m.test, ...m.lessons.flatMap(l => l.check.map(q => ({ ...q, l:l.id })))]); }
+function examIntro(){
+  const root = $('#testRoot'), fe = S().exam, pool = examPool(), n = Math.min(30, pool.length);
+  root.innerHTML = `<div class="crumbs"><a href="#/">главная</a> / экзамен</div><h1>Финальный экзамен</h1>
+  <p style="margin-top:12px;max-width:62ch">${n} случайных вопросов из всех модулей, 45 минут, порог ${PASS}%. В банке сейчас ${pool.length} вопросов, с новыми модулями он будет расти.</p>
+  ${fe ? `<p class="small">Лучший результат <b>${fe.best}%</b>, попыток: ${fe.attempts}.</p>` : ''}
+  <button class="btn" id="examGo" style="margin-top:8px">Начать экзамен</button>`;
+  $('#examGo').onclick = () => runQuiz(root, shuffle(pool).slice(0, n), {
+    title:'Финальный экзамен', crumbs:'<a href="#/">главная</a> / экзамен', deadline:Date.now() + 45 * 60 * 1000,
+    onFinish:score => {
+      const o = S().exam;
+      S().exam = { best:Math.max(score, o ? o.best : 0), attempts:(o ? o.attempts : 0) + 1, lastAt:new Date().toISOString() };
+      store.save();
+      return { msg:score >= PASS ? 'Экзамен сдан.' : 'Экзамен пока не сдан. Разбор ошибок ниже.', back:'#/exam' };
+    }
+  });
+}
+function runQuiz(root, qs, o){
+  root.innerHTML = `<div class="crumbs">${o.crumbs}</div><div class="row" style="justify-content:space-between"><h1>${esc(o.title)}</h1>${o.deadline ? '<span class="timer" id="timer" aria-label="Осталось времени"></span>' : ''}</div>
+  <p class="small" style="margin-top:6px">${qs.length} вопросов. Ответы проверяются после нажатия «Завершить тест».</p><div id="qs"></div>
+  <div class="row" style="margin-top:22px"><button class="btn" id="finish">Завершить тест</button><span class="small" id="cnt"></span></div>`;
+  const box = $('#qs');
+  const sts = qs.map((q, i) => { const c = document.createElement('div'); box.appendChild(c); return mountQ(c, q, i + 1, qs.length, false); });
+  const touched = st => st.q.type === 'order' ? !!st.touched : answered(st);
+  const upd = () => { const c = $('#cnt'); if (c) c.textContent = `Отвечено ${sts.filter(touched).length} из ${qs.length}`; };
+  ['change', 'input', 'click'].forEach(e => box.addEventListener(e, upd)); upd();
+  let fin = false;
+  const finish = () => {
+    if (fin) return; fin = true; clearInterval(examTimer);
+    let ok = 0; const wrong = [];
+    sts.forEach(st => { const g = grade(st); feedback(st, g); if (g) ok++; else wrong.push(st.q.id); });
+    const score = Math.round(ok / qs.length * 100), r = o.onFinish(score, wrong);
+    $('#finish').parentElement.remove(); const cf = $('#finishConfirm'); if (cf) cf.remove();
+    const head = document.createElement('div'); head.className = 'result';
+    head.innerHTML = `<div class="big" style="color:${score >= PASS ? 'var(--ok)' : 'var(--bad)'}">${score}%</div><p>${ok} из ${qs.length} верно. ${esc(r.msg)}</p><div class="row" style="justify-content:center">${r.errors ? `<a class="btn" href="${r.errors}">Повторить только ошибки</a>` : ''}${r.next ? `<a class="btn" href="${r.next}">Следующий модуль →</a>` : ''}<a class="btn ghost" href="${r.back}">Назад</a></div>`;
+    box.before(head);
+    const h2 = document.createElement('h2'); h2.textContent = 'Разбор ответов'; box.before(h2);
+    renderSide(); window.scrollTo(0, 0);
+  };
+  $('#finish').onclick = () => {
+    const left = sts.filter(st => !answered(st)).length;
+    if (left && !$('#finishConfirm')){
+      const c = document.createElement('div'); c.id = 'finishConfirm'; c.className = 'confirm';
+      c.innerHTML = `Без ответа: ${left}. Они будут засчитаны как неверные. <button class="btn danger sm" style="margin-left:8px">Всё равно завершить</button>`;
+      c.querySelector('button').onclick = finish; $('#finish').parentElement.after(c); return;
+    }
+    finish();
+  };
+  if (o.deadline){
+    const tick = () => {
+      const left = Math.max(0, o.deadline - Date.now()), t = $('#timer');
+      if (t) t.textContent = pad(Math.floor(left / 60000)) + ':' + pad(Math.floor(left % 60000 / 1000));
+      if (!left){ toast('Время вышло.'); finish(); }
+    };
+    tick(); examTimer = setInterval(tick, 1000);
+  }
+}
+
+// ====== ИНСТРУМЕНТЫ ======
+function mountWidgets(scope){ scope.querySelectorAll('[data-widget]').forEach(el => { const w = WIDGETS[el.dataset.widget]; if (w) w(el); }); }
+function viewTools(){
+  return `<div class="crumbs"><a href="#/">главная</a> / инструменты</div><h1>Инструменты</h1>
+  <p class="small" style="margin-top:8px">Интерактивные схемы из уроков, собранные в одном месте.</p>
+  <h2 style="margin:28px 0 12px">Путь коммита до продакшена</h2><div data-widget="pipeline"></div>
+  <h2 style="margin:28px 0 12px">Калькулятор прав chmod</h2><div data-widget="chmod"></div>
+  <h2 style="margin:28px 0 12px">Расшифровка cron</h2><div data-widget="cron"></div>
+  <h2 style="margin:28px 0 12px">Кэш слоёв Docker</h2><div data-widget="layers"></div>
+  <h2 style="margin:28px 0 12px">Стратегии деплоя</h2><div data-widget="rollout"></div>`;
+}
+
+// ====== ГЛОССАРИЙ ======
+function viewGlossary(){
+  return `<div class="crumbs"><a href="#/">главная</a> / глоссарий</div><h1>Глоссарий</h1><input type="text" id="glq" placeholder="Поиск термина" style="width:100%;max-width:420px;margin:18px 0 6px" aria-label="Поиск термина"><div id="gl"></div>`;
+}
+function mountGlossary(){
+  const draw = () => {
+    const s = $('#glq').value.trim().toLowerCase();
+    const items = GLOSSARY.filter(g => !s || (g[0] + ' ' + g[1]).toLowerCase().includes(s)).sort((a, b) => a[0].localeCompare(b[0], 'ru'));
+    $('#gl').innerHTML = items.map(g => `<div class="gl-item"><b>${esc(g[0])}</b> — ${fmt(g[1])} <a href="#/l/${g[2]}" class="small">урок ${g[2].replace('-', '.')}</a></div>`).join('') || '<p class="small">Ничего не найдено. Попробуйте другое слово.</p>';
+  };
+  $('#glq').oninput = draw; draw();
+}
+
+// ====== ШПАРГАЛКИ ======
+function viewCheats(){
+  const t = (head, rows) => `<div class="tbl"><table><tr>${head.map(h => `<th>${h}</th>`).join('')}</tr>${rows.map(r => `<tr>${r.map((c, i) => `<td>${i === 0 ? '<code>' + esc(c) + '</code>' : fmt(c)}</td>`).join('')}</tr>`).join('')}</table></div>`;
+  return `<div class="crumbs"><a href="#/">главная</a> / шпаргалки</div><h1>Шпаргалки</h1>` +
+    CHEATS.map(c => `<h2 style="margin:30px 0 12px">${esc(c.title)}</h2>` + t(c.head || ['Команда', 'Что делает'], c.rows)).join('');
+}
+
+// ====== ПРОГРЕСС ======
+function viewProgress(){
+  const o = overall();
+  let imp = '';
+  if (pendingImport){
+    const d = pendingImport, n = Object.values(d.lessons).filter(x => x.completed).length;
+    imp = `<div class="banner"><span>Загружен прогресс от ${new Date(d.savedAt).toLocaleString('ru-RU')}: уроков ${n}, тестов ${Object.keys(d.tests).length}. Что сделать с текущим прогрессом?</span><span class="row"><button class="btn sm" id="impReplace">Заменить</button><button class="btn ghost sm" id="impMerge">Объединить</button><button class="btn ghost sm" id="impCancel">Отмена</button></span></div>`;
+  }
+  return `<div class="crumbs"><a href="#/">главная</a> / прогресс</div><h1>Прогресс</h1>${imp}
+  <div class="stats" style="margin:18px 0 8px"><div class="stat"><b>${o.pct}%</b><span>курса</span></div><div class="stat"><b>${o.done}/${o.total}</b><span>уроков</span></div><div class="stat"><b>${o.passed}/${MODULES.length}</b><span>тестов</span></div><div class="stat"><b>${S().exam ? S().exam.best + '%' : '—'}</b><span>экзамен</span></div></div>
+  <h2 style="margin-top:28px">Где хранится прогресс</h2>
+  <p style="max-width:66ch">Прогресс сохраняется в этом браузере автоматически. Чтобы перенести его на другое устройство или не потерять при очистке браузера, скачайте файл или скопируйте текст прогресса, а потом загрузите его здесь же.</p>
+  <div class="row"><button class="btn ghost" id="dl">Скачать файл .json</button><button class="btn ghost" id="cp">Скопировать</button><label class="btn ghost" for="impFile" style="cursor:pointer">Загрузить файл</label><input type="file" id="impFile" accept=".json,application/json" hidden></div>
+  <textarea id="exportBox" rows="6" hidden readonly aria-label="Текст прогресса" style="margin-top:12px"></textarea>
+  <details style="margin-top:14px"><summary class="small" style="cursor:pointer">Вставить прогресс текстом</summary><textarea id="pasteBox" rows="5" placeholder='{"app":"devops-course", ...}' style="margin-top:8px" aria-label="Вставьте текст прогресса"></textarea><button class="btn ghost sm" id="pasteGo" style="margin-top:8px">Загрузить из текста</button></details>
+  <h2 style="margin-top:30px">Результаты тестов</h2>
+  <div class="tbl" style="margin-top:12px"><table><tr><th>Модуль</th><th>Лучший</th><th>Последний</th><th>Попыток</th></tr>${MODULES.map(m => { const t = S().tests['m' + m.id]; return `<tr><td>${pad(m.id)}. ${esc(m.title)}</td><td>${t ? t.best + '%' : '—'}</td><td>${t ? t.last + '%' : '—'}</td><td>${t ? t.attempts : 0}</td></tr>`; }).join('')}</table></div>
+  <h2 style="margin-top:30px">Настройки</h2>
+  <label class="opt" style="max-width:520px;margin-top:12px"><input type="checkbox" id="unlockAll" ${S().settings.unlockAll ? 'checked' : ''}><span>Открыть все модули без сдачи тестов</span></label>
+  <h2 style="margin-top:30px">Сброс</h2>
+  <button class="btn danger" id="resetBtn" style="margin-top:12px">Сбросить весь прогресс</button>
+  ${confirmReset ? `<div class="confirm">Весь прогресс будет удалён без возможности восстановления. Если он может понадобиться, сначала скачайте копию.<div class="row" style="margin-top:10px"><button class="btn ghost sm" id="resetDl">Скачать копию</button><button class="btn danger sm" id="resetYes">Да, сбросить</button><button class="btn ghost sm" id="resetNo">Отмена</button></div></div>` : ''}`;
+}
+function mountProgress(){
+  const on = (id, fn) => { const e = document.getElementById(id); if (e) e.onclick = fn; };
+  on('dl', () => store.download()); on('cp', () => store.copy()); on('resetDl', () => store.download());
+  const f = $('#impFile');
+  f.onchange = () => { const file = f.files[0]; if (!file) return; const r = new FileReader(); r.onload = () => { const d = store.parse(r.result); if (d){ pendingImport = d; render(); } }; r.readAsText(file); };
+  on('pasteGo', () => { const d = store.parse($('#pasteBox').value); if (d){ pendingImport = d; render(); } });
+  on('impReplace', () => { store.apply(pendingImport, 'replace'); pendingImport = null; toast('Прогресс заменён.'); render(); });
+  on('impMerge', () => { store.apply(pendingImport, 'merge'); pendingImport = null; toast('Прогресс объединён.'); render(); });
+  on('impCancel', () => { pendingImport = null; render(); });
+  $('#unlockAll').onchange = e => { S().settings.unlockAll = e.target.checked; store.save(); renderSide(); };
+  on('resetBtn', () => { confirmReset = true; render(); });
+  on('resetNo', () => { confirmReset = false; render(); });
+  on('resetYes', () => { confirmReset = false; store.reset(); toast('Прогресс сброшен.'); render(); });
+}
+
+// ====== СТАРТ ======
+store.load(); applyTheme(); render();
+</script>
