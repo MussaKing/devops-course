@@ -101,7 +101,7 @@ function renderStatus(){
 function renderSide(){
   const h = location.hash || '#/';
   const link = (href, inner, cls = '') => `<a href="${href}" class="${h === href || (href !== '#/' && h.startsWith(href + '/')) ? 'active' : ''} ${cls}">${inner}</a>`;
-  let html = `<a class="brand" href="#/"><svg width="28" height="28" viewBox="0 0 28 28" aria-hidden="true"><path d="M9 9.5a5 5 0 1 0 0 9c2.6 0 4.2-2.2 5-4.5s2.4-4.5 5-4.5a5 5 0 1 1 0 9c-2.6 0-4.2-2.2-5-4.5S11.6 9.5 9 9.5Z" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="19" cy="14" r="2.2" fill="var(--accent)"/></svg>DevOps для разработчиков</a><nav class="nav">`;
+  let html = `<a class="brand" href="../" style="font:600 .75rem/1 var(--f-mono);padding:0 8px 12px;color:var(--muted)">← Все курсы</a><a class="brand" href="#/"><svg width="28" height="28" viewBox="0 0 28 28" aria-hidden="true"><path d="M9 9.5a5 5 0 1 0 0 9c2.6 0 4.2-2.2 5-4.5s2.4-4.5 5-4.5a5 5 0 1 1 0 9c-2.6 0-4.2-2.2-5-4.5S11.6 9.5 9 9.5Z" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="19" cy="14" r="2.2" fill="var(--accent)"/></svg>DevOps для разработчиков</a><nav class="nav">`;
   html += link('#/', '<span class="port">~</span>Главная');
   html += '<div class="nav-label">Модули</div>';
   for (const m of MODULES){
